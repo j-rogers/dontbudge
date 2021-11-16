@@ -1,25 +1,10 @@
 from flask import request, Blueprint
-from datetime import datetime, timedelta
 from flask.json import jsonify
+from datetime import date, timedelta
+from dontbudge.api import models
+from dontbudge.database import db
 
 api = Blueprint('api', __name__)
-
-class Period:
-    def __init__(self):
-        self.range = timedelta(days=14)
-        self.start_date = datetime(2021, 11, 11)
-
-class Account:
-    def __init__(self, name, balance):
-        self.name = name
-        self.balance = balance
-
-class User:
-    def __init__(self):
-        self.periods = [Period(),]
-        self.accounts = []
-
-u = User()
 
 @api.route('/')
 def hello():
@@ -33,17 +18,42 @@ def account():
         data = request.get_json()
         name = data['name']
         balance = data['balance']
-        u.accounts.append(Account(name, balance))
-        d={'accounts': []}
-        for a in u.accounts:
+        user = data['user']
+        u = models.UserDetails.query.filter_by(name=user).first()
+        if u:
+            account = models.Account(name, int(balance), u.id)
+            db.session.add(account)
+        else:
+            # Create user
+            u = models.UserDetails(user)
+            db.session.add(u)
+            db.session.commit()
+
+            # Initial period
+            start = date.today()
+            range_delta = timedelta(days=u.range)
+            end = start + range_delta
+            period = models.Period(start, end, u.id)
+            db.session.add(period)
+            db.session.commit()
+
+            # add account
+            account = models.Account(name, int(balance), u.id)
+            db.session.add(account)
+        db.session.commit()  
+        d={'user':u.name,'accounts': [], 'periods': []}
+        for a in models.Account.query.filter_by(user=u.id).all():
             d['accounts'].append({'name': a.name, 'balance': a.balance})
+        for p in models.Period.query.filter_by(user=u.id).all():
+            d['periods'].append({'start': p.start, 'end': p.end})
         return jsonify(d)
 
 @api.route('/api/withdraw', methods=['GET', 'POST'])
 def withdraw():
     # View withdrawals
     if request.method == 'GET':
-        return jsonify(f'Viewing withdrawals for period {u.periods[0].start_date.strftime("%Y/%m/%d")}-{(u.periods[0].start_date + u.periods[0].range).strftime("%Y/%m/%d")}')
+        #return jsonify(f'Viewing withdrawals for period {u.periods[0].start_date.strftime("%Y/%m/%d")}-{(u.periods[0].start_date + u.periods[0].range).strftime("%Y/%m/%d")}')
+        return jsonify('no')
     elif request.method == 'POST':
         data = request.get_json()
         amount = int(data['amount'])
@@ -51,7 +61,3 @@ def withdraw():
         return jsonify(u.balance)
     else:
         return 'invalid method'
-
-if __name__ == '__main__':
-    
-    app.run(host='0.0.0.0')
