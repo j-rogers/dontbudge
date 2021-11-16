@@ -57,7 +57,7 @@ def withdraw():
     elif request.method == 'POST':
         data = request.get_json()
         amount = int(data['amount'])
-        u.balance -= amount
-        return jsonify(u.balance)
+        #u.balance -= amount
+        return jsonify('dummy')
     else:
         return 'invalid method'
