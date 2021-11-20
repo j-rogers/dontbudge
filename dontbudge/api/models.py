@@ -47,7 +47,7 @@ class Period(db.Model):
 class Account(db.Model):
     __tablename__ = 'accounts'
     id = db.Column(db.Integer, primary_key=True)
-    user_d = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
     name = db.Column(db.String(100))
     balance = db.Column(db.Integer)
     
@@ -65,6 +65,6 @@ class UserDetails(db.Model):
     periods = relationship('Period', backref='user')
     bills = relationship('Bill', backref='user')
 
-    def __init__(self, name, range=14):
+    def __init__(self, user_id, name, range=14):
         self.name = name
         self.range = range

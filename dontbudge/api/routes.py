@@ -6,10 +6,6 @@ from dontbudge.database import db
 
 api = Blueprint('api', __name__)
 
-@api.route('/')
-def hello():
-    return 'Hello world'
-
 @api.route('/api/account', methods=['GET', 'POST'])
 def account():
     if request.method == 'GET':
@@ -61,3 +57,11 @@ def withdraw():
         return jsonify('dummy')
     else:
         return 'invalid method'
+
+@api.route('/api/deposit', methods=['GET', 'POST'])
+def deposit():
+    return 'none'
+
+@api.route('/api/bill', methods=['GET', 'POST'])
+def bill():
+    return 'none'
