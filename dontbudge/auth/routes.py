@@ -1,8 +1,9 @@
 from flask import Blueprint, json, request, render_template, flash, jsonify
+from datetime import date, timedelta
 import hashlib
 from dontbudge.auth.forms import RegisterForm, LoginForm
 from dontbudge.database import db
-from dontbudge.api.models import UserDetails
+from dontbudge.api.models import UserDetails, Period
 from dontbudge.auth.models import User
 from dontbudge.auth.jwt import create_token
 
@@ -18,8 +19,15 @@ def register():
             password = form.password.data
             password_hash = hashlib.md5(password.encode())
 
-            userdetails = UserDetails('New User', 'New User')
+            userdetails = UserDetails('New User')
             db.session.add(userdetails)
+            db.session.commit()
+
+            start = date.today()
+            range_delta = timedelta(days=userdetails.range)
+            end = start + range_delta
+            period = Period(start, end, userdetails.id)
+            db.session.add(period)
             db.session.commit()
 
             user = User(userdetails.id, username, password_hash.hexdigest())

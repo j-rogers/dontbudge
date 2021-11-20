@@ -3,10 +3,12 @@ from flask.json import jsonify
 from datetime import date, timedelta
 from dontbudge.api import models
 from dontbudge.database import db
+from dontbudge.auth.jwt import token_required
 
 api = Blueprint('api', __name__)
 
 @api.route('/api/account', methods=['GET', 'POST'])
+@token_required
 def account():
     if request.method == 'GET':
         return jsonify('nothing here')
@@ -45,11 +47,25 @@ def account():
         return jsonify(d)
 
 @api.route('/api/withdraw', methods=['GET', 'POST'])
-def withdraw():
+@token_required
+def withdraw(user):
     # View withdrawals
     if request.method == 'GET':
-        #return jsonify(f'Viewing withdrawals for period {u.periods[0].start_date.strftime("%Y/%m/%d")}-{(u.periods[0].start_date + u.periods[0].range).strftime("%Y/%m/%d")}')
-        return jsonify('no')
+        userdetails = models.UserDetails.query.filter_by(id=user.userdetails_id).first()
+        withdrawals = {}
+        for period in userdetails.periods:
+            transactions = []
+            for transaction in period.transactions:
+                transactions.append({
+                    'date': transaction.date,
+                    'description': transaction.description
+                })
+            withdrawals[period.id] = {
+                'start': period.start,
+                'end': period.end,
+                'transactions': transactions
+            }   
+        return jsonify(withdrawals)
     elif request.method == 'POST':
         data = request.get_json()
         amount = int(data['amount'])
@@ -59,9 +75,11 @@ def withdraw():
         return 'invalid method'
 
 @api.route('/api/deposit', methods=['GET', 'POST'])
+@token_required
 def deposit():
     return 'none'
 
 @api.route('/api/bill', methods=['GET', 'POST'])
+@token_required
 def bill():
     return 'none'
