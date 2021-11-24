@@ -1,0 +1,16 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<h1>Current Period: {{ period_start }} - {{ period_end }}</h1>
+
+<h1>Accounts</h1>
+{% for account in accounts %}
+<h3>{{ account.name }}</h3>
+<h3>Balance: {{ account.balance }}</h3>
+<h3>Transactions</h3>
+{% for transaction in account.transactions %}
+<p>Description: {{ transaction.description }}</p>
+<p>Amount: {{ transaction.amount }}</p>
+{% endfor %}
+{% endfor %}
+{% endblock %}

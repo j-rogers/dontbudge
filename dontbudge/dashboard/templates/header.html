@@ -1,0 +1,20 @@
+{% block header %}
+    <li>
+        <a href="/">Dashboard</a>
+        <a href="/login">Login</a>
+        <a href="/logout">Logout</a>
+    </li>
+
+    {% if logged_in %}
+    <li>
+        <a href="/withdraw/create">Create Withdrawal</a>
+        <a href="/deposit/create">Create Deposit</a>
+        <a href="/account/create">Create Account</a>
+        <a href="/bill/create">Create Bill</a>
+        <a href="/settings">Settings</a>
+    </li>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+{% endblock %}

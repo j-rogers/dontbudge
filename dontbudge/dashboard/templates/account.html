@@ -1,0 +1,15 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<h1>New Account</h1>
+<form action="", method="post">
+    {{ new_account_form.hidden_tag() }}
+    <p>{{new_account_form.name.label}}<br>
+    {{new_account_form.name(size=32)}}<br>
+    </p>
+    <p>{{new_account_form.starting_balance.label}}<br>
+    {{new_account_form.starting_balance(size=32)}}<br>
+    </p>
+    <p>{{ new_account_form.submit() }}</p>
+</form>
+{% endblock %}

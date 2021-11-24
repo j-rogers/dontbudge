@@ -1,3 +1,5 @@
+from decimal import Decimal
+from datetime import date
 from sqlalchemy.orm import relationship
 from dontbudge.database import db
 
@@ -8,27 +10,29 @@ class Bill(db.Model):
     start = db.Column(db.DateTime)
     name = db.Column(db.String(50))
     occurence = db.Column(db.Integer)
+    amount = db.Column(db.Numeric(scale=2))
 
-    def __init__(self, start, name, occurence, user_id):
+    def __init__(self, start: date, name: str, occurence: int, user_id: int, amount: Decimal):
         self.start = start
         self.name = name
         self.occurence = occurence
         self.user_id = user_id
+        self.amount = amount
 
 class Transaction(db.Model):
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)
-    period_id = db.Column(db.Integer, db.ForeignKey('periods.id'))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
     bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'))
     description = db.Column(db.String(100))
     date = db.Column(db.DateTime)
+    amount = db.Column(db.Numeric(scale=2))
 
-    def __init__(self, period_id, account_id, description, date, bill_id=None):
-        self.period_id = period_id
+    def __init__(self, account_id: int, description: str, date: date, amount: Decimal, bill_id: int = None):
         self.account_id = account_id
         self.description = description
         self.date = date
+        self.amount = amount
         self.bill_id = bill_id
 
 class Period(db.Model):
@@ -37,9 +41,8 @@ class Period(db.Model):
     user_id = db.Column(db.ForeignKey('userdetails.id'))
     start = db.Column(db.DateTime)
     end = db.Column(db.DateTime)
-    transactions = relationship('Transaction', backref='period')
 
-    def __init__(self, start, end, user_id):
+    def __init__(self, start: date, end: date, user_id: int):
         self.start = start
         self.end = end
         self.user_id = user_id
@@ -49,9 +52,10 @@ class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
     name = db.Column(db.String(100))
-    balance = db.Column(db.Integer)
-    
-    def __init__(self, name, balance, user_id):
+    balance = db.Column(db.Numeric(scale=2))
+    transactions = relationship('Transaction', backref='account')
+
+    def __init__(self, name: str, balance: Decimal, user_id: id):
         self.name = name
         self.balance = balance
         self.user_id = user_id
@@ -65,6 +69,6 @@ class UserDetails(db.Model):
     periods = relationship('Period', backref='user')
     bills = relationship('Bill', backref='user')
 
-    def __init__(self, name, range=14):
+    def __init__(self, name: str, range: int = 14):
         self.name = name
         self.range = range
