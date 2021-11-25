@@ -1,0 +1,29 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<br>
+<p>Other Periods</p>
+<li>
+    {% for period in periods %}
+    <a href="/transaction/view/{{ period[0] }}">{{ period[1].strftime('%d %B, %Y') }} - {{ period[2].strftime('%d %B, %Y') }}</a>
+    {% endfor %}
+</li>
+<h1>Viewing transaction for period: {{ period_start.strftime('%d %B, %Y') }} - {{ period_end.strftime('%d %B, %Y') }}</h1>
+
+<table>
+    <tr>
+        <th>Amount</th>
+        <th>Description</th>
+        <th>Account</th>
+        <th>Date</th>
+    </tr>
+    {% for transaction in transactions %}
+    <tr>
+        <th>{{ transaction[0] }}</th>
+        <th>{{ transaction[1] }}</th>
+        <th>{{ transaction[2] }}</th>
+        <th>{{ transaction[3].strftime('%d %B, %Y') }}</th>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

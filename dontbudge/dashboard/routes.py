@@ -4,13 +4,14 @@ Contains the routes for the dashboard.
 
 Author: Josh Rogers (2021)
 """
+import datetime
 from flask import request, redirect, render_template
-from datetime import timedelta
+from datetime import timedelta, date
 from dontbudge.database import db
 from dontbudge.dashboard import dashboard, forms
 from dontbudge.auth.jwt import token_required
 from dontbudge.auth.models import User
-from dontbudge.api.models import Account, Transaction, UserDetails, Bill
+from dontbudge.api.models import Account, Transaction, UserDetails, Bill, Period
 
 @dashboard.route('/', methods=['GET', 'POST'])
 def index():
@@ -40,9 +41,17 @@ def render_index(user: User) -> str:
     userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
     accounts = userdetails.accounts
     period = userdetails.periods[-1]
-    period_start = period.start.strftime('%d %B, %Y')
-    period_end = period.end.strftime('%d %B, %Y')
-    return render_template('index.html', accounts=accounts, period_start=period_start, period_end=period_end, logged_in=True)
+    
+    # Create new period if needed
+    if date.today() >= period.end.date():
+        start = period.end
+        range_delta = timedelta(days=userdetails.range)
+        end = start + range_delta
+        period = Period(start, end, userdetails.id)
+        db.session.add(period)
+        db.session.commit()
+
+    return render_template('index.html', accounts=accounts, period_start=period.start, period_end=period.end, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
@@ -72,7 +81,7 @@ def create_account(user: User) -> str:
 
     return render_template('account.html', new_account_form=new_account_form, logged_in=True)
 
-@dashboard.route('/withdraw/create', methods=['GET', 'POST'])
+@dashboard.route('/transaction/create/withdraw', methods=['GET', 'POST'])
 @token_required
 def create_withdraw(user: User) -> str:
     """Create Withdraw Transaction
@@ -100,7 +109,7 @@ def create_withdraw(user: User) -> str:
             account_id = withdraw_form.account.data
             amount = withdraw_form.amount.data
             date = withdraw_form.date.data
-            
+
             # Create the Transaction and take away the amount from the specified account
             withdrawal = Transaction(account_id, description, date, amount * -1)
             account = Account.query.filter_by(id=account_id).first()
@@ -112,7 +121,7 @@ def create_withdraw(user: User) -> str:
 
     return render_template('transaction.html', title='Withdraw', transaction_form=withdraw_form, logged_in=True)
 
-@dashboard.route('/deposit/create', methods=['GET', 'POST'])
+@dashboard.route('/transaction/create/deposit', methods=['GET', 'POST'])
 @token_required
 def create_deposit(user: User) -> str:
     """Create Deposit Transaction
@@ -150,6 +159,39 @@ def create_deposit(user: User) -> str:
             return redirect('/')
 
     return render_template('transaction.html', title='Deposit', transaction_form=deposit_form, logged_in=True)
+
+@dashboard.route('/transaction/view')
+@token_required
+def view_transactions(user):
+    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
+    return redirect(f'/transaction/view/{len(userdetails.periods) - 1}')
+
+@dashboard.route('/transaction/view/<period_index>', methods=['GET', 'POST'])
+@token_required
+def view_transactions_period(user, period_index):
+    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
+    period = userdetails.periods[int(period_index)]
+    transactions = []
+    for account in userdetails.accounts:
+        for transaction  in account.transactions:
+            if transaction.date >= period.start and transaction.date < period.end:
+                transactions.append((
+                    transaction.amount,
+                    transaction.description,
+                    account.name,
+                    transaction.date
+                ))
+
+    transactions.sort(key = lambda date: date[3])
+
+    periods = []
+    for p in userdetails.periods:
+        periods.append((
+            userdetails.periods.index(p),
+            p.start,
+            p.end
+        ))
+    return render_template('transactions.html', periods=periods, transactions=transactions, period_start=period.start, period_end=period.end, logged_in=True)
 
 @dashboard.route('/bill/create', methods=['GET', 'POST'])
 @token_required
@@ -195,13 +237,13 @@ def settings(user):
             range = settings_form.range.data
             period_start = settings_form.period_start.data
 
+            userdetails.range = range
             range_delta = timedelta(days=userdetails.range)
             end = period_start + range_delta
             period = userdetails.periods[-1]
             period.start = period_start
             period.end = end
 
-            userdetails.range = range
             db.session.commit()
 
             return redirect('/')

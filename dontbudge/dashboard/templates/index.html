@@ -1,7 +1,7 @@
 {% extends 'header.html' %}
 
 {% block content %}
-<h1>Current Period: {{ period_start }} - {{ period_end }}</h1>
+<h1>Current Period: {{ period_start.strftime('%d %B, %Y') }} - {{ period_end.strftime('%d %B, %Y') }}</h1>
 
 <h1>Accounts</h1>
 {% for account in accounts %}
