@@ -85,20 +85,70 @@ def create_account(user: User) -> str:
 @token_required
 def view_accounts(user):
     userdetails = user.userdetails
-    return NotImplemented
+    accounts = userdetails.accounts
+    return render_template('accounts.html', accounts=accounts, logged_in=True)
 
 @dashboard.route('/account/view/<account_index>')
 @token_required
 def view_account(user, account_index):
-    return NotImplemented
-
-@dashboard.route('/account/view/<account_index>/transaction/<transaction_index>')
-@token_required
-def view_period_transaction(user, account_index, transaction_index):
     userdetails = user.userdetails
     account = userdetails.accounts[int(account_index)]
-    transaction = account[int(transaction_index)]
-    return NotImplemented
+
+    transactions = []
+    for transaction in account.transactions:
+        transactions.append((
+            transaction.amount,
+            transaction.description,
+            account.name,
+            transaction.date,
+            account.transactions.index(transaction)
+        ))
+
+    transactions.sort(key = lambda date: date[3])
+
+    return render_template('account.html', account=account, account_index=account_index, transactions=transactions, logged_in=True)
+
+@dashboard.route('/account/view/<account_index>/transaction/<transaction_index>', methods=['GET', 'POST'])
+@token_required
+def view_period_transaction(user, account_index, transaction_index):
+    # Get current details
+    userdetails = user.userdetails
+    account = userdetails.accounts[int(account_index)]
+    transaction = account.transactions[int(transaction_index)]
+    
+    # Create form
+    transaction_form = forms.TransactionForm()
+    transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
+
+    # Update transaction details if any changed
+    if transaction_form.validate_on_submit():
+        if transaction.description != transaction_form.description.data:
+            transaction.description = transaction_form.description.data
+        if transaction.account_id != transaction_form.account.data:
+            transaction.account_id = transaction_form.account.data
+            account.balance -= transaction.amount
+            new_account = Account.query.filter_by(id=transaction_form.account.data).first()
+            new_account.balance += transaction.amount
+        if transaction.amount != transaction_form.amount.data:
+            account.balance += transaction.amount if transaction_form.type.data == 'withdraw' else transaction.amount * -1
+            transaction.amount = transaction_form.amount.data if transaction_form.type.data == 'deposit' else transaction_form.amount.data * -1
+            account.balance += transaction.amount
+        if transaction.date != transaction_form.date.data:
+            transaction.date = transaction_form.date.data
+
+        # Commit the changes
+        db.session.commit()
+
+        return redirect('/')
+
+    # Fill in existing details
+    transaction_form.description.data = transaction.description
+    transaction_form.account.data = account.id
+    transaction_form.amount.data = transaction.amount if transaction.amount > 0 else transaction.amount * -1
+    transaction_form.date.data = transaction.date
+    transaction_form.type.data = 'deposit' if transaction.amount >= 0 else 'withdraw'
+
+    return render_template('create_transaction.html', title='Edit Transaction', transaction_form=transaction_form, logged_in=True)
 
 @dashboard.route('/transaction/create/<type>', methods=['GET', 'POST'])
 @token_required
@@ -124,6 +174,7 @@ def create_withdraw(user: User, type: str) -> str:
     userdetails = user.userdetails
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
+    transaction_form.type.data = 'deposit' if type == 'deposit' else 'withdraw'
 
     if request.method == 'POST':
         if transaction_form.validate_on_submit():
@@ -170,7 +221,9 @@ def view_period(user, period_index):
                     transaction.amount,
                     transaction.description,
                     account.name,
-                    transaction.date
+                    transaction.date,
+                    userdetails.accounts.index(account),
+                    account.transactions.index(transaction)
                 ))
 
     transactions.sort(key = lambda date: date[3])
@@ -221,7 +274,7 @@ def create_bill(user: User) -> str:
 def settings(user):
     userdetails = user.userdetails
     settings_form = forms.SettingsForm()
-    settings_form.range.default = userdetails.range
+    settings_form.range.data = userdetails.range
 
     if request.method == 'POST':
         if settings_form.validate_on_submit():

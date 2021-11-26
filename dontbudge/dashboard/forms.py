@@ -9,7 +9,8 @@ Author: Josh Rogers (2021)
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, DateField, SelectField, DecimalField
 from wtforms.fields.numeric import IntegerField
-from wtforms.validators import DataRequired, NumberRange, Optional
+from wtforms.fields.simple import HiddenField
+from wtforms.validators import DataRequired, NumberRange, Optional, AnyOf
 
 class NewAccountForm(FlaskForm):
     """Form for creating a new Account"""
@@ -23,6 +24,7 @@ class TransactionForm(FlaskForm):
     account = SelectField('Account', validators=[DataRequired()])
     amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     date = DateField('Date', validators=[DataRequired()])
+    type = HiddenField('type', validators=[AnyOf(('deposit', 'withdraw'))])
     submit = SubmitField('Submit')
 
 class BillForm(FlaskForm):
