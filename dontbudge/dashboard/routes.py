@@ -38,7 +38,7 @@ def render_index(user: User) -> str:
     Returns:
         A rendered index.html template
     """
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
+    userdetails = user.userdetails
     accounts = userdetails.accounts
     period = userdetails.periods[-1]
     
@@ -67,8 +67,8 @@ def create_account(user: User) -> str:
     Returns:
         A rendered account.html page
     """
+    userdetails = user.userdetails
     new_account_form = forms.NewAccountForm()
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
 
     if request.method == 'POST':
         if new_account_form.validate_on_submit():
@@ -81,12 +81,31 @@ def create_account(user: User) -> str:
 
     return render_template('account.html', new_account_form=new_account_form, logged_in=True)
 
-@dashboard.route('/transaction/create/withdraw', methods=['GET', 'POST'])
+@dashboard.route('/account/view')
 @token_required
-def create_withdraw(user: User) -> str:
+def view_accounts(user):
+    userdetails = user.userdetails
+    return NotImplemented
+
+@dashboard.route('/account/view/<account_index>')
+@token_required
+def view_account(user, account_index):
+    return NotImplemented
+
+@dashboard.route('/account/view/<account_index>/transaction/<transaction_index>')
+@token_required
+def view_period_transaction(user, account_index, transaction_index):
+    userdetails = user.userdetails
+    account = userdetails.accounts[int(account_index)]
+    transaction = account[int(transaction_index)]
+    return NotImplemented
+
+@dashboard.route('/transaction/create/<type>', methods=['GET', 'POST'])
+@token_required
+def create_withdraw(user: User, type: str) -> str:
     """Create Withdraw Transaction
 
-    Renders the page for creating a withdrawal transaction as well as processing
+    Renders the page for creating a transaction as well as processing
     the transaction request. The significant difference between the withdraw and
     deposit transactions is that withdraw takes money from an account, whereas
     deposit adds money to an account. Otherwise, they use the same page and 
@@ -94,82 +113,54 @@ def create_withdraw(user: User) -> str:
 
     Args:
         user -> dontbudge.auth.models.User: Authenticated User model
+        type -> String: Type of transaction; either deposit or withdraw
 
     Returns:
         Rendered transaction.html page
     """
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
-    withdraw_form = forms.TransactionForm()
-    withdraw_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
+    if type not in ('withdraw', 'deposit'):
+        return redirect('/')
+
+    userdetails = user.userdetails
+    transaction_form = forms.TransactionForm()
+    transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
 
     if request.method == 'POST':
-        if withdraw_form.validate_on_submit():
+        if transaction_form.validate_on_submit():
             # Get data from the form
-            description = withdraw_form.description.data
-            account_id = withdraw_form.account.data
-            amount = withdraw_form.amount.data
-            date = withdraw_form.date.data
+            description = transaction_form.description.data
+            account_id = transaction_form.account.data
+            amount = transaction_form.amount.data
+            date = transaction_form.date.data
 
-            # Create the Transaction and take away the amount from the specified account
-            withdrawal = Transaction(account_id, description, date, amount * -1)
-            account = Account.query.filter_by(id=account_id).first()
-            account.balance -= amount
-            db.session.add(withdrawal)
+            # Create the Transaction and take/add the amount from the specified account
+            transaction = None
+            if type == 'withdraw':
+                transaction = Transaction(account_id, description, date, amount * -1)
+                account = Account.query.filter_by(id=account_id).first()
+                account.balance -= amount
+            elif type == 'deposit':
+                transaction = Transaction(account_id, description, date, amount)
+                account = Account.query.filter_by(id=account_id).first()
+                account.balance += amount
+
+            db.session.add(transaction)
             db.session.commit()
 
             return redirect('/')
 
-    return render_template('transaction.html', title='Withdraw', transaction_form=withdraw_form, logged_in=True)
+    return render_template('transaction.html', title=type.capitalize(), transaction_form=transaction_form, logged_in=True)
 
-@dashboard.route('/transaction/create/deposit', methods=['GET', 'POST'])
-@token_required
-def create_deposit(user: User) -> str:
-    """Create Deposit Transaction
-
-    Renders the page for creating a deposit transaction as well as processing
-    the transaction request. See create_withdraw for differences between a 
-    withdraw and deposit transaction. A valid JWT token is required to access
-    this endpoint.
-
-    Args:
-        user -> dontbudge.auth.models.User: Authenticated User model
-
-    Returns:
-        Rendered transaction.html template
-    """
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
-    deposit_form = forms.TransactionForm()
-    deposit_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
-
-    if request.method == 'POST':
-        if deposit_form.validate_on_submit():
-            # Get data from form
-            description = deposit_form.description.data
-            account_id = deposit_form.account.data
-            amount = deposit_form.amount.data
-            date = deposit_form.date.data
-            
-            # Create Transaction and add amount to the specified account
-            deposit = Transaction(account_id, description, date, amount)
-            account = Account.query.filter_by(id=account_id).first()
-            account.balance += amount
-            db.session.add(deposit)
-            db.session.commit()
-
-            return redirect('/')
-
-    return render_template('transaction.html', title='Deposit', transaction_form=deposit_form, logged_in=True)
-
-@dashboard.route('/transaction/view')
+@dashboard.route('/period/view')
 @token_required
 def view_transactions(user):
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
-    return redirect(f'/transaction/view/{len(userdetails.periods) - 1}')
+    userdetails = user.userdetails
+    return redirect(f'/period/view/{len(userdetails.periods) - 1}')
 
-@dashboard.route('/transaction/view/<period_index>', methods=['GET', 'POST'])
+@dashboard.route('/period/view/<period_index>')
 @token_required
-def view_transactions_period(user, period_index):
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
+def view_period(user, period_index):
+    userdetails = user.userdetails
     period = userdetails.periods[int(period_index)]
     transactions = []
     for account in userdetails.accounts:
@@ -207,7 +198,7 @@ def create_bill(user: User) -> str:
     Returns:
         Rendered bill.html template
     """
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
+    userdetails = user.userdetails
     bill_form = forms.BillForm()
     
     if request.method == 'POST':
@@ -228,7 +219,7 @@ def create_bill(user: User) -> str:
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required
 def settings(user):
-    userdetails = UserDetails.query.filter_by(id=user.userdetails_id).first()
+    userdetails = user.userdetails
     settings_form = forms.SettingsForm()
     settings_form.range.default = userdetails.range
 

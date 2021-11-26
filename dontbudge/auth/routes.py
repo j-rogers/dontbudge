@@ -20,7 +20,11 @@ def register():
             password = form.password.data
             password_hash = hashlib.md5(password.encode())
 
-            userdetails = UserDetails('New User')
+            user = User(username, password_hash.hexdigest())
+            db.session.add(user)
+            db.session.commit()
+
+            userdetails = UserDetails(username, user.id)
             db.session.add(userdetails)
             db.session.commit()
 
@@ -31,9 +35,7 @@ def register():
             db.session.add(period)
             db.session.commit()
 
-            user = User(userdetails.id, username, password_hash.hexdigest())
-            db.session.add(user)
-            db.session.commit()
+            return redirect('/login')
         else:
             flash('form not valid')
             return 'not gucci'

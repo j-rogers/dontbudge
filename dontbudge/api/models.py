@@ -19,11 +19,20 @@ class Bill(db.Model):
         self.user_id = user_id
         self.amount = amount
 
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Integer)
+
+    def __init__(self, name: str):
+        self.name = name
+
 class Transaction(db.Model):
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
     bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     description = db.Column(db.String(100))
     date = db.Column(db.DateTime)
     amount = db.Column(db.Numeric(scale=2))
@@ -63,12 +72,14 @@ class Account(db.Model):
 class UserDetails(db.Model):
     __tablename__ = 'userdetails'
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     name = db.Column(db.String(15))
     range = db.Column(db.Integer)
     accounts = relationship('Account', backref='user')
     periods = relationship('Period', backref='user')
     bills = relationship('Bill', backref='user')
 
-    def __init__(self, name: str, range: int = 14):
+    def __init__(self, name: str, user_id: int, range: int = 14):
         self.name = name
+        self.user_id = user_id
         self.range = range
