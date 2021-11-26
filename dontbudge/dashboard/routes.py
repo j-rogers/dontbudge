@@ -65,7 +65,7 @@ def create_account(user: User) -> str:
         user -> dontbudge.auth.models.User: Authenticated User model
 
     Returns:
-        A rendered account.html page
+        A rendered create_account.html page
     """
     userdetails = user.userdetails
     new_account_form = forms.NewAccountForm()
@@ -79,7 +79,7 @@ def create_account(user: User) -> str:
             db.session.commit()
             return redirect('/')
 
-    return render_template('account.html', new_account_form=new_account_form, logged_in=True)
+    return render_template('create_account.html', new_account_form=new_account_form, logged_in=True)
 
 @dashboard.route('/account/view')
 @token_required
@@ -116,7 +116,7 @@ def create_withdraw(user: User, type: str) -> str:
         type -> String: Type of transaction; either deposit or withdraw
 
     Returns:
-        Rendered transaction.html page
+        Rendered create_transaction.html page
     """
     if type not in ('withdraw', 'deposit'):
         return redirect('/')
@@ -149,7 +149,7 @@ def create_withdraw(user: User, type: str) -> str:
 
             return redirect('/')
 
-    return render_template('transaction.html', title=type.capitalize(), transaction_form=transaction_form, logged_in=True)
+    return render_template('create_transaction.html', title=type.capitalize(), transaction_form=transaction_form, logged_in=True)
 
 @dashboard.route('/period/view')
 @token_required
@@ -182,7 +182,7 @@ def view_period(user, period_index):
             p.start,
             p.end
         ))
-    return render_template('transactions.html', periods=periods, transactions=transactions, period_start=period.start, period_end=period.end, logged_in=True)
+    return render_template('period.html', periods=periods, transactions=transactions, period_start=period.start, period_end=period.end, logged_in=True)
 
 @dashboard.route('/bill/create', methods=['GET', 'POST'])
 @token_required
@@ -196,7 +196,7 @@ def create_bill(user: User) -> str:
         user -> dontbudge.auth.models.User: Authenticated User model
 
     Returns:
-        Rendered bill.html template
+        Rendered create_bill.html template
     """
     userdetails = user.userdetails
     bill_form = forms.BillForm()
@@ -214,7 +214,7 @@ def create_bill(user: User) -> str:
 
             return redirect('/')
 
-    return render_template('bill.html', bill_form=bill_form, logged_in=True)
+    return render_template('create_bill.html', bill_form=bill_form, logged_in=True)
 
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required

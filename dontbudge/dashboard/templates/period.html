@@ -5,7 +5,7 @@
 <p>Other Periods</p>
 <li>
     {% for period in periods %}
-    <a href="/transaction/view/{{ period[0] }}">{{ period[1].strftime('%d %B, %Y') }} - {{ period[2].strftime('%d %B, %Y') }}</a>
+    <a href="/period/view/{{ period[0] }}">{{ period[1].strftime('%d %B, %Y') }} - {{ period[2].strftime('%d %B, %Y') }}</a>
     {% endfor %}
 </li>
 <h1>Viewing transaction for period: {{ period_start.strftime('%d %B, %Y') }} - {{ period_end.strftime('%d %B, %Y') }}</h1>
