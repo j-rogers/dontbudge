@@ -9,10 +9,10 @@ class Bill(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
     start = db.Column(db.DateTime)
     name = db.Column(db.String(50))
-    occurence = db.Column(db.Integer)
+    occurence = db.Column(db.String(4))
     amount = db.Column(db.Numeric(scale=2))
 
-    def __init__(self, start: date, name: str, occurence: int, user_id: int, amount: Decimal):
+    def __init__(self, start: date, name: str, occurence: str, user_id: int, amount: Decimal):
         self.start = start
         self.name = name
         self.occurence = occurence

@@ -13,4 +13,11 @@
 <p>Amount: {{ transaction.amount }}</p>
 {% endfor %}
 {% endfor %}
+
+<h1>Bills due this Period</h1>
+{% for bill in bills %}
+<p>{{ bill.name }}</p>
+<p>{{ bill.amount }}</p>
+<p>{{ bill.start }}</p>
+{% endfor %}
 {% endblock %}

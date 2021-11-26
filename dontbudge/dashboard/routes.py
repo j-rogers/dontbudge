@@ -4,9 +4,10 @@ Contains the routes for the dashboard.
 
 Author: Josh Rogers (2021)
 """
-import datetime
 from flask import request, redirect, render_template
 from datetime import timedelta, date
+from dateutil.relativedelta import relativedelta
+from werkzeug.wrappers.response import Response
 from dontbudge.database import db
 from dontbudge.dashboard import dashboard, forms
 from dontbudge.auth.jwt import token_required
@@ -51,7 +52,24 @@ def render_index(user: User) -> str:
         db.session.add(period)
         db.session.commit()
 
-    return render_template('index.html', accounts=accounts, period_start=period.start, period_end=period.end, logged_in=True)
+    # Check what bills will be due in the current period
+    bills = userdetails.bills
+    active_bills = []
+    for bill in bills:
+        if bill.start.date() <= period.start.date():
+            switch = {
+                '1W': relativedelta(weeks=1),
+                '2W': relativedelta(weeks=2),
+                '1M': relativedelta(months=1),
+                '1Q': relativedelta(months=3),
+                '1Y': relativedelta(years=1)
+            }
+            bill.start += switch[bill.occurence]
+            db.session.commit()
+        if bill.start.date() >= period.start.date() and bill.start.date() <= period.end.date():
+            active_bills.append(bill)
+
+    return render_template('index.html', accounts=accounts, period_start=period.start, period_end=period.end, bills=active_bills, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
@@ -83,14 +101,38 @@ def create_account(user: User) -> str:
 
 @dashboard.route('/account/view')
 @token_required
-def view_accounts(user):
+def view_accounts(user: User) -> str:
+    """View accounts summary
+
+    Renders a page that gives a brief summary of all accounts, i.e. their name
+    and balance. A valid JWT token is required to access this endpoint.
+
+    Args:
+        user -> dontbudge.auth.models.User: Authenticated User model
+
+    Returns:
+        Rendered accounts.html template
+    """
     userdetails = user.userdetails
     accounts = userdetails.accounts
     return render_template('accounts.html', accounts=accounts, logged_in=True)
 
 @dashboard.route('/account/view/<account_index>')
 @token_required
-def view_account(user, account_index):
+def view_account(user: User, account_index: int) -> str:
+    """Detailed account summary
+
+    Renders a page that gives a detailed view of a specific account, including
+    all transactions of that account. A valid JWT token is required to access
+    this endpoint.
+
+    Args:
+        user: dontbudge.auth.models.User: Authenticated User model
+        account_index -> Integer: Index of the account in the UserDetails.accounts list
+
+    Returns:
+        Rendered account.html template
+    """
     userdetails = user.userdetails
     account = userdetails.accounts[int(account_index)]
 
@@ -110,7 +152,20 @@ def view_account(user, account_index):
 
 @dashboard.route('/account/view/<account_index>/transaction/<transaction_index>', methods=['GET', 'POST'])
 @token_required
-def view_period_transaction(user, account_index, transaction_index):
+def view_transaction(user: User, account_index: int, transaction_index: int) -> str:
+    """View a given transaction of an account
+
+    Renders a page for viewing and editing the details of an existing transaction
+    for a given account. A valid JWT token is required to access this endpoint.
+
+    Args:
+        user -> dontbudge.auth.models.User: Authenticated User model
+        account_index -> Integer: Index of the account in the UserDetails.accounts list
+        transaction_index -> Integer: Index of the transaction in the Accounts.transactions list
+
+    Returns:
+        A rendered create_transaction.html template
+    """
     # Get current details
     userdetails = user.userdetails
     account = userdetails.accounts[int(account_index)]
@@ -204,13 +259,36 @@ def create_withdraw(user: User, type: str) -> str:
 
 @dashboard.route('/period/view')
 @token_required
-def view_transactions(user):
+def view_transactions(user: User) -> Response:
+    """View all transactions in the current period
+
+    Redirects the user to the endpoint that renders the current periods transactions.
+    A valid JWT token is required to access this endpoint.
+
+    Args:
+        user -> dontbudge.auth.models.User: Authenticated User model
+
+    Returns:
+        A redirection to the endpoint containing the current period
+    """
     userdetails = user.userdetails
     return redirect(f'/period/view/{len(userdetails.periods) - 1}')
 
 @dashboard.route('/period/view/<period_index>')
 @token_required
-def view_period(user, period_index):
+def view_period(user: User, period_index: int) -> str:
+    """View all transactions in a given period
+
+    Renders a page that displays a list of all transaction within a given period.
+    A valid JWT token is required to access this endpoint.
+
+    Args:
+        user -> dontbudge.auth.models.User: Authenticated User model
+        period_index -> Integer: Index of the period in the UserDetails.periods list
+
+    Returns:
+        Rendered period.html template
+    """
     userdetails = user.userdetails
     period = userdetails.periods[int(period_index)]
     transactions = []
@@ -257,8 +335,8 @@ def create_bill(user: User) -> str:
     if request.method == 'POST':
         if bill_form.validate_on_submit():
             name = bill_form.name.data
-            start = bill_form.start.data
             occurence = bill_form.occurence.data
+            start = bill_form.start.data
             amount = bill_form.amount.data
 
             bill = Bill(start, name, occurence, userdetails.id, amount)
