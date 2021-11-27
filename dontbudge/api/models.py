@@ -74,12 +74,16 @@ class UserDetails(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     name = db.Column(db.String(15))
-    range = db.Column(db.Integer)
+    range = db.Column(db.String(4))
+    period_start = db.Column(db.DateTime)
+    period_end = db.Column(db.DateTime)
     accounts = relationship('Account', backref='user')
     periods = relationship('Period', backref='user')
     bills = relationship('Bill', backref='user')
 
-    def __init__(self, name: str, user_id: int, range: int = 14):
+    def __init__(self, name: str, user_id: int, range: str, period_start: date, period_end: date):
         self.name = name
         self.user_id = user_id
         self.range = range
+        self.period_start = period_start
+        self.period_end = period_end

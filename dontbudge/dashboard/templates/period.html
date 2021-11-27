@@ -3,11 +3,11 @@
 {% block content %}
 <br>
 <p>Other Periods</p>
-<li>
-    {% for period in periods %}
-    <a href="/period/view/{{ period[0] }}">{{ period[1].strftime('%d %B, %Y') }} - {{ period[2].strftime('%d %B, %Y') }}</a>
+{% for period in periods %}
+    <li>
+        <a href="/period/view/{{ periods.index(period) }}">{{ period.start.strftime('%d %B, %Y') }} - {{ period.end.strftime('%d %B, %Y') }}</a>
+    </li>
     {% endfor %}
-</li>
 <h1>Viewing transaction for period: {{ period_start.strftime('%d %B, %Y') }} - {{ period_end.strftime('%d %B, %Y') }}</h1>
 
 <table>
@@ -19,11 +19,11 @@
     </tr>
     {% for transaction in transactions %}
     <tr>
-        <th>{{ transaction[0] }}</th>
-        <th>{{ transaction[1] }}</th>
-        <th>{{ transaction[2] }}</th>
-        <th>{{ transaction[3].strftime('%d %B, %Y') }}</th>
-        <th><a href="/account/view/{{ transaction[4] }}/transaction/{{ transaction[5] }}">Edit </a></a></th>
+        <th>{{ transaction.amount }}</th>
+        <th>{{ transaction.description }}</th>
+        <th>{{ transaction.account }}</th>
+        <th>{{ transaction.date.strftime('%d %B, %Y') }}</th>
+        <th><a href="/account/view/{{ transaction.account_index }}/transaction/{{ transaction.transaction_index }}">Edit </a></a></th>
     </tr>
     {% endfor %}
 </table>

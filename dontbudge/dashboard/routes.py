@@ -9,7 +9,7 @@ from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
 from werkzeug.wrappers.response import Response
 from dontbudge.database import db
-from dontbudge.dashboard import dashboard, forms
+from dontbudge.dashboard import dashboard, forms, utility
 from dontbudge.auth.jwt import token_required
 from dontbudge.auth.models import User
 from dontbudge.api.models import Account, Transaction, UserDetails, Bill, Period
@@ -41,35 +41,24 @@ def render_index(user: User) -> str:
     """
     userdetails = user.userdetails
     accounts = userdetails.accounts
-    period = userdetails.periods[-1]
     
-    # Create new period if needed
-    if date.today() >= period.end.date():
-        start = period.end
-        range_delta = timedelta(days=userdetails.range)
-        end = start + range_delta
-        period = Period(start, end, userdetails.id)
-        db.session.add(period)
+    # Modify current period if needed
+    if date.today() >= userdetails.period_end.date():
+        userdetails.period_start = userdetails.period_end
+        userdetails.period_end += utility.get_relative(userdetails.range)
         db.session.commit()
 
     # Check what bills will be due in the current period
     bills = userdetails.bills
     active_bills = []
     for bill in bills:
-        if bill.start.date() <= period.start.date():
-            switch = {
-                '1W': relativedelta(weeks=1),
-                '2W': relativedelta(weeks=2),
-                '1M': relativedelta(months=1),
-                '1Q': relativedelta(months=3),
-                '1Y': relativedelta(years=1)
-            }
-            bill.start += switch[bill.occurence]
+        if bill.start.date() <= userdetails.period_start.date():
+            bill.start += utility.get_relative(userdetails.range)
             db.session.commit()
-        if bill.start.date() >= period.start.date() and bill.start.date() <= period.end.date():
+        if userdetails.period_start <= bill.start.date <= userdetails.period_end:
             active_bills.append(bill)
 
-    return render_template('index.html', accounts=accounts, period_start=period.start, period_end=period.end, bills=active_bills, logged_in=True)
+    return render_template('index.html', accounts=accounts, period_start=userdetails.period_start, period_end=userdetails.period_end, bills=active_bills, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
@@ -136,19 +125,9 @@ def view_account(user: User, account_index: int) -> str:
     userdetails = user.userdetails
     account = userdetails.accounts[int(account_index)]
 
-    transactions = []
-    for transaction in account.transactions:
-        transactions.append((
-            transaction.amount,
-            transaction.description,
-            account.name,
-            transaction.date,
-            account.transactions.index(transaction)
-        ))
+    transactions = utility.get_reverse_sorted_transactions(userdetails)
 
-    transactions.sort(key = lambda date: date[3])
-
-    return render_template('account.html', account=account, account_index=account_index, transactions=transactions, logged_in=True)
+    return render_template('account.html', account=account, transactions=transactions, logged_in=True)
 
 @dashboard.route('/account/view/<account_index>/transaction/<transaction_index>', methods=['GET', 'POST'])
 @token_required
@@ -207,8 +186,8 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
 
 @dashboard.route('/transaction/create/<type>', methods=['GET', 'POST'])
 @token_required
-def create_withdraw(user: User, type: str) -> str:
-    """Create Withdraw Transaction
+def create_transaction(user: User, type: str) -> str:
+    """Create Transaction
 
     Renders the page for creating a transaction as well as processing
     the transaction request. The significant difference between the withdraw and
@@ -272,7 +251,8 @@ def view_transactions(user: User) -> Response:
         A redirection to the endpoint containing the current period
     """
     userdetails = user.userdetails
-    return redirect(f'/period/view/{len(userdetails.periods) - 1}')
+    periods = utility.get_periods(userdetails)
+    return redirect(f'/period/view/{len(periods) - 1}')
 
 @dashboard.route('/period/view/<period_index>')
 @token_required
@@ -290,30 +270,19 @@ def view_period(user: User, period_index: int) -> str:
         Rendered period.html template
     """
     userdetails = user.userdetails
-    period = userdetails.periods[int(period_index)]
-    transactions = []
-    for account in userdetails.accounts:
-        for transaction  in account.transactions:
-            if transaction.date >= period.start and transaction.date < period.end:
-                transactions.append((
-                    transaction.amount,
-                    transaction.description,
-                    account.name,
-                    transaction.date,
-                    userdetails.accounts.index(account),
-                    account.transactions.index(transaction)
-                ))
+    periods = utility.get_periods(userdetails)
+    period = periods[int(period_index)]
+    transactions = utility.get_sorted_transactions(userdetails)
 
-    transactions.sort(key = lambda date: date[3])
+    # Get transactions in this period
+    period_transactions = []
+    for transaction in transactions:
+        if period.start <= transaction.date < period.end:
+            period_transactions.append(transaction)
 
-    periods = []
-    for p in userdetails.periods:
-        periods.append((
-            userdetails.periods.index(p),
-            p.start,
-            p.end
-        ))
-    return render_template('period.html', periods=periods, transactions=transactions, period_start=period.start, period_end=period.end, logged_in=True)
+    period_transactions.sort(key = lambda transaction: transaction[3])
+
+    return render_template('period.html', periods=periods, transactions=period_transactions, period_start=period.start, period_end=period.end, logged_in=True)
 
 @dashboard.route('/bill/create', methods=['GET', 'POST'])
 @token_required
@@ -352,22 +321,26 @@ def create_bill(user: User) -> str:
 def settings(user):
     userdetails = user.userdetails
     settings_form = forms.SettingsForm()
-    settings_form.range.data = userdetails.range
+    
+    if settings_form.validate_on_submit():
+        range = settings_form.range.data
+        period_start = settings_form.period_start.data
 
-    if request.method == 'POST':
-        if settings_form.validate_on_submit():
-            range = settings_form.range.data
-            period_start = settings_form.period_start.data
-
-            userdetails.range = range
-            range_delta = timedelta(days=userdetails.range)
-            end = period_start + range_delta
-            period = userdetails.periods[-1]
-            period.start = period_start
-            period.end = end
-
+        # Change if there is a difference
+        if userdetails.period_start != period_start:
+            userdetails.period_start = period_start
+            userdetails.period_end = userdetails.period_start + utility.get_relative(userdetails.range)
             db.session.commit()
 
-            return redirect('/')
+        if userdetails.range != range:
+            userdetails.range = range
+            userdetails.period_end = userdetails.period_start + utility.get_relative(range)
+            db.session.commit()
+
+        return redirect('/')
+
+    # Fill in defaults
+    settings_form.range.data = userdetails.range
+    settings_form.period_start.data = userdetails.period_start
 
     return render_template('settings.html', settings_form=settings_form, logged_in=True)

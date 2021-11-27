@@ -15,11 +15,11 @@
     </tr>
     {% for transaction in transactions %}
     <tr>
-        <th>{{ transaction[0] }}</th>
-        <th>{{ transaction[1] }}</th>
-        <th>{{ transaction[2] }}</th>
-        <th>{{ transaction[3].strftime('%d %B, %Y') }}</th>
-        <th><a href="/account/view/{{ account_index }}/transaction/{{ transaction[4] }}">Edit</th>
+        <th>{{ transaction.amount }}</th>
+        <th>{{ transaction.description }}</th>
+        <th>{{ transaction.account_name }}</th>
+        <th>{{ transaction.date.strftime('%d %B, %Y') }}</th>
+        <th><a href="/account/view/{{ transaction.account_index }}/transaction/{{ transaction.transaction_index }}">Edit</th>
     </tr>
     {% endfor %}
 </table>

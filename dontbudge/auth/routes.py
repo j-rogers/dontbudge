@@ -1,11 +1,12 @@
 from flask import Blueprint, request, render_template, flash, redirect
-from datetime import date, timedelta
+from datetime import date
 import hashlib
 from flask.helpers import make_response
 from dontbudge.auth.forms import RegisterForm, LoginForm
 from dontbudge.database import db
 from dontbudge.api.models import UserDetails, Period
 from dontbudge.auth.models import User
+from dateutil.relativedelta import relativedelta
 from dontbudge.auth.jwt import create_token, token_required
 
 auth = Blueprint('auth', __name__, template_folder='templates')
@@ -24,15 +25,11 @@ def register():
             db.session.add(user)
             db.session.commit()
 
-            userdetails = UserDetails(username, user.id)
-            db.session.add(userdetails)
-            db.session.commit()
-
             start = date.today()
-            range_delta = timedelta(days=userdetails.range)
+            range_delta = relativedelta(weeks=2)
             end = start + range_delta
-            period = Period(start, end, userdetails.id)
-            db.session.add(period)
+            userdetails = UserDetails(username, user.id, '2W', start, end)
+            db.session.add(userdetails)
             db.session.commit()
 
             return redirect('/login')

@@ -47,6 +47,16 @@ class BillForm(FlaskForm):
 
 class SettingsForm(FlaskForm):
     """Form for changing settings"""
-    range = IntegerField('Range', validators=[Optional()])
+    range = SelectField(
+        'Occurence', 
+        choices = [
+            ('1W', 'Weekly'),
+            ('2W', 'Fortnightly'),
+            ('1M', 'Monthly'),
+            ('1Q', 'Quartely'),
+            ('1Y', 'Annualy')
+        ],
+        validators = [Optional()]
+    )
     period_start = DateField('Period Start Date', validators=[Optional()])
     submit = SubmitField('Submit')
