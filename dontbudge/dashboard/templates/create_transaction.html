@@ -4,17 +4,20 @@
 <h1>{{ title }}</h1>
 <form action="", method="post">
     {{ transaction_form.hidden_tag() }}
-    <p>{{transaction_form.description.label}}<br>
-    {{transaction_form.description(size=32)}}<br>
+    <p>{{ transaction_form.description.label }}<br>
+    {{ transaction_form.description(size=32) }}<br>
     </p>
-    <p>{{transaction_form.account.label}}<br>
-    {{transaction_form.account(size=5)}}<br>
+    <p>{{ transaction_form.account.label }}<br>
+    {{ transaction_form.account(size=5) }}<br>
     </p>
-    <p>{{transaction_form.amount.label}}<br>
-    {{transaction_form.amount(size=32)}}<br>
+    <p>{{ transaction_form.amount.label }}<br>
+    {{ transaction_form.amount(size=32) }}<br>
     </p>
-    <p>{{transaction_form.date.label}}<br>
-    {{transaction_form.date(size=32)}}<br>
+    <p>{{ transaction_form.date.label }}<br>
+    {{ transaction_form.date(size=32) }}<br>
+    </p>
+    <p>{{ transaction_form.bill.label }}<br>
+    {{ transaction_form.bill(size=5) }}<br>
     </p>
     <p>{{ transaction_form.type }}</p>
     <p>{{ transaction_form.submit() }}</p>

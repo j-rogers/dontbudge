@@ -1,0 +1,22 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<h1>Bills</h1>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Amount</th>
+        <th>Next Expected</th>
+        <th>Occurence</th>
+    </tr>
+    {% for bill in bills %}
+    <tr>
+        <th>{{ bill.name }}</th>
+        <th>{{ bill.amount }}</th>
+        <th>{{ bill.start.strftime('%d %B, %Y') }}</th>
+        <th>{{ bill.occurence }}</th>
+        <th><a href="/bill/edit/{{ bill.bill_index }}">Edit</a></th>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -24,6 +24,7 @@ class TransactionForm(FlaskForm):
     account = SelectField('Account', validators=[DataRequired()])
     amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     date = DateField('Date', validators=[DataRequired()])
+    bill = SelectField('Bill', validators=[Optional()])
     type = HiddenField('type', validators=[AnyOf(('deposit', 'withdraw'))])
     submit = SubmitField('Submit')
 

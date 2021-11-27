@@ -42,20 +42,13 @@ def render_index(user: User) -> str:
     userdetails = user.userdetails
     accounts = userdetails.accounts
     
-    # Modify current period if needed
-    if date.today() >= userdetails.period_end.date():
-        userdetails.period_start = userdetails.period_end
-        userdetails.period_end += utility.get_relative(userdetails.range)
-        db.session.commit()
+    utility.update(userdetails)
 
     # Check what bills will be due in the current period
     bills = userdetails.bills
     active_bills = []
     for bill in bills:
-        if bill.start.date() <= userdetails.period_start.date():
-            bill.start += utility.get_relative(userdetails.range)
-            db.session.commit()
-        if userdetails.period_start <= bill.start.date <= userdetails.period_end:
+        if userdetails.period_start <= bill.start < userdetails.period_end:
             active_bills.append(bill)
 
     return render_template('index.html', accounts=accounts, period_start=userdetails.period_start, period_end=userdetails.period_end, bills=active_bills, logged_in=True)
@@ -153,6 +146,7 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
     # Create form
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
+    transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
 
     # Update transaction details if any changed
     if transaction_form.validate_on_submit():
@@ -169,6 +163,10 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
             account.balance += transaction.amount
         if transaction.date != transaction_form.date.data:
             transaction.date = transaction_form.date.data
+        if transaction.bill_id != transaction_form.bill.data:
+            transaction.bill_id = transaction_form.bill.data
+            bill = Bill.query.filter_by(id=transaction_form.bill.data).first()
+            bill.start = bill.start + utility.get_relative(bill.occurence)
 
         # Commit the changes
         db.session.commit()
@@ -180,6 +178,7 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
     transaction_form.account.data = account.id
     transaction_form.amount.data = transaction.amount if transaction.amount > 0 else transaction.amount * -1
     transaction_form.date.data = transaction.date
+    transaction_form.bill.data = transaction.bill_id
     transaction_form.type.data = 'deposit' if transaction.amount >= 0 else 'withdraw'
 
     return render_template('create_transaction.html', title='Edit Transaction', transaction_form=transaction_form, logged_in=True)
@@ -208,6 +207,7 @@ def create_transaction(user: User, type: str) -> str:
     userdetails = user.userdetails
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
+    transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
     transaction_form.type.data = 'deposit' if type == 'deposit' else 'withdraw'
 
     if request.method == 'POST':
@@ -217,17 +217,23 @@ def create_transaction(user: User, type: str) -> str:
             account_id = transaction_form.account.data
             amount = transaction_form.amount.data
             date = transaction_form.date.data
+            bill_id = transaction_form.bill.data
 
             # Create the Transaction and take/add the amount from the specified account
             transaction = None
             if type == 'withdraw':
-                transaction = Transaction(account_id, description, date, amount * -1)
+                transaction = Transaction(account_id, description, date, amount * -1, bill_id)
                 account = Account.query.filter_by(id=account_id).first()
                 account.balance -= amount
             elif type == 'deposit':
-                transaction = Transaction(account_id, description, date, amount)
+                transaction = Transaction(account_id, description, date, amount, bill_id)
                 account = Account.query.filter_by(id=account_id).first()
                 account.balance += amount
+
+            # Update next bill occurence since this one has been paid
+            if bill_id:
+                bill = Bill.query.filter_by(id=bill_id).first()
+                bill.start = bill.start + utility.get_relative(bill.occurence)
 
             db.session.add(transaction)
             db.session.commit()
@@ -280,9 +286,9 @@ def view_period(user: User, period_index: int) -> str:
         if period.start <= transaction.date < period.end:
             period_transactions.append(transaction)
 
-    period_transactions.sort(key = lambda transaction: transaction[3])
+    period_transactions.sort(key = lambda transaction: transaction.date)
 
-    return render_template('period.html', periods=periods, transactions=period_transactions, period_start=period.start, period_end=period.end, logged_in=True)
+    return render_template('period.html', periods=periods, transactions=reversed(period_transactions), period_start=period.start, period_end=period.end, logged_in=True)
 
 @dashboard.route('/bill/create', methods=['GET', 'POST'])
 @token_required
@@ -301,20 +307,74 @@ def create_bill(user: User) -> str:
     userdetails = user.userdetails
     bill_form = forms.BillForm()
     
-    if request.method == 'POST':
-        if bill_form.validate_on_submit():
-            name = bill_form.name.data
-            occurence = bill_form.occurence.data
-            start = bill_form.start.data
-            amount = bill_form.amount.data
+    if bill_form.validate_on_submit():
+        name = bill_form.name.data
+        occurence = bill_form.occurence.data
+        start = bill_form.start.data
+        amount = bill_form.amount.data
 
-            bill = Bill(start, name, occurence, userdetails.id, amount)
-            db.session.add(bill)
-            db.session.commit()
+        bill = Bill(start, name, occurence, userdetails.id, amount)
+        db.session.add(bill)
+        db.session.commit()
 
-            return redirect('/')
+        return redirect('/')
 
-    return render_template('create_bill.html', bill_form=bill_form, logged_in=True)
+    return render_template('create_bill.html', title='Create Bill', bill_form=bill_form, logged_in=True)
+
+@dashboard.route('/bill/view')
+@token_required
+def view_bills(user):
+    userdetails = user.userdetails
+
+    switch = {
+        '1W': 'Weekly',
+        '2W': 'Fortnightly',
+        '1M': 'Monthly',
+        '1Q': 'Quartely',
+        '1Y': 'Anually'
+    }
+
+    bills = []
+    for bill in userdetails.bills:
+        bills.append(utility.Bill(
+            bill.name,
+            bill.amount,
+            bill.start,
+            switch[bill.occurence],
+            userdetails.bills.index(bill)
+        ))
+
+    return render_template('bills.html', bills=bills, logged_in=True)
+
+@dashboard.route('/bill/edit/<bill_index>', methods=['GET', 'POST'])
+@token_required
+def edit_bill(user, bill_index):
+    userdetails = user.userdetails
+    bill = userdetails.bills[int(bill_index)]
+    bill_form = forms.BillForm()
+
+    if bill_form.validate_on_submit():
+        if bill.name != bill_form.name.data:
+            bill.name = bill_form.name.data
+
+        if bill.start != bill_form.start.data:
+            bill.start = bill_form.start.data
+
+        if bill.occurence != bill_form.occurence.data:
+            bill.occurence = bill_form.occurence.data
+
+        if bill.amount != bill_form.amount.data:
+            bill.amount = bill_form.amount.data
+
+        db.session.commit()
+
+        return redirect('/')
+
+    bill_form.name.data = bill.name
+    bill_form.start.data = bill.start
+    bill_form.occurence.data = bill.occurence
+    bill_form.amount.data = bill.amount
+    return render_template('create_bill.html', title='Edit Bill', bill_form=bill_form, logged_in=True)
 
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required

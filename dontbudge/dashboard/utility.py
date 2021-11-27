@@ -1,6 +1,7 @@
 from collections import namedtuple
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from dontbudge.database import db
 
 Transaction = namedtuple('Transaction', [
     'amount',
@@ -14,6 +15,14 @@ Transaction = namedtuple('Transaction', [
 Period = namedtuple('Period', [
     'start',
     'end'
+])
+
+Bill = namedtuple('Bill', [
+    'name',
+    'amount',
+    'start',
+    'occurence',
+    'bill_index'
 ])
 
 def get_relative(code):
@@ -40,22 +49,36 @@ def get_sorted_transactions(userdetails):
                 userdetails.accounts.index(account)
             ))
     
-    transactions.sort(key = lambda transaction: transaction[3])
+    transactions.sort(key = lambda transaction: transaction.date)
     return transactions
 
 def get_reverse_sorted_transactions(userdetails):
     transactions = get_sorted_transactions(userdetails)
-    return transactions
+    return reversed(transactions)
 
 def get_periods(userdetails):
     range = get_relative(userdetails.range)
-    print(userdetails.range)
     periods = []
 
     for transaction in get_sorted_transactions(userdetails):
         start = userdetails.period_start
         while transaction.date < start:
             start -= range
-        periods.append(Period(start, start+range))
+        period = Period(start, start+range)
+        if period not in periods:
+            periods.append(period)
 
     return periods
+
+def update(userdetails):
+    # Modify current period if needed
+    if date.today() >= userdetails.period_end.date():
+        userdetails.period_start = userdetails.period_end
+        userdetails.period_end += get_relative(userdetails.range)
+        db.session.commit()
+
+    # Update bill next occurences
+    for bill in userdetails.bills:
+        if bill.start <= userdetails.period_start:
+            bill.start += get_relative(userdetails.range)
+            db.session.commit()
