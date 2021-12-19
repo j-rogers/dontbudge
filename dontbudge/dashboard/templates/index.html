@@ -1,23 +1,70 @@
 {% extends 'header.html' %}
 
 {% block content %}
-<h1>Current Period: {{ period_start.strftime('%d %B, %Y') }} - {{ period_end.strftime('%d %B, %Y') }}</h1>
-
-<h1>Accounts</h1>
-{% for account in accounts %}
-<h3>{{ account.name }}</h3>
-<h3>Balance: {{ account.balance }}</h3>
-<h3>Transactions</h3>
-{% for transaction in account.transactions %}
-<p>Description: {{ transaction.description }}</p>
-<p>Amount: {{ transaction.amount }}</p>
-{% endfor %}
-{% endfor %}
-
-<h1>Bills due this Period</h1>
-{% for bill in bills %}
-<p>{{ bill.name }}</p>
-<p>{{ bill.amount }}</p>
-<p>{{ bill.start }}</p>
-{% endfor %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1 class="text-center">Accounts</h1>
+            {% for account in accounts %}
+                <div class="container py-3">
+                    <div class="row border bg-light">
+                        <div class="col">
+                            <h4 class="text-primary">{{ account.name }}</h4>
+                        </div>
+                        <div class="col text-end">
+                            {% if account.balance >= 0 %}
+                            <h4 class="text-success">${{ account.balance }}</h4>
+                            {% else %}
+                            <h4 class="text-danger">${{ account.balance }}</h4>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% for transaction in account.transactions %}
+                    <div class="row border">
+                        <div class="col">
+                            <p>{{ transaction.description }}</p>
+                        </div>
+                        <div class="col text-end">
+                            {% if transaction.amount > 0 %}
+                            <p class="text-success">${{ transaction.amount }}</p>
+                            {% else %}
+                            <p class="text-danger">-${{ transaction.amount * -1 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="col">
+            <h1 class="text-center">Bills due this Period</h1>
+            <div class="container py-2"></div>
+                <div class="row border bg-light">
+                    <div class="col">
+                        <h4>Bill</h4>
+                    </div>
+                    <div class="col">
+                        <h4>Amount</h4>
+                    </div>
+                    <div class="col">
+                        <h4>Due</h4>
+                    </div>
+                </div>
+                {% for bill in bills %}
+                <div class="row border">
+                    <div class="col">
+                        <p>{{ bill.name }}</p>
+                    </div>
+                    <div class="col">
+                        <p>${{ bill.amount }}</p>
+                    </div>
+                    <div class="col">
+                        <p>{{ bill.start.strftime('%d %B, %Y') }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

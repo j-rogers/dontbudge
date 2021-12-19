@@ -51,7 +51,9 @@ def render_index(user: User) -> str:
         if userdetails.period_start <= bill.start < userdetails.period_end:
             active_bills.append(bill)
 
-    return render_template('index.html', accounts=accounts, period_start=userdetails.period_start, period_end=userdetails.period_end, bills=active_bills, logged_in=True)
+    title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
+
+    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
@@ -79,7 +81,7 @@ def create_account(user: User) -> str:
             db.session.commit()
             return redirect('/')
 
-    return render_template('create_account.html', new_account_form=new_account_form, logged_in=True)
+    return render_template('create_account.html', title='New Account', new_account_form=new_account_form, logged_in=True)
 
 @dashboard.route('/account/view')
 @token_required
@@ -97,7 +99,7 @@ def view_accounts(user: User) -> str:
     """
     userdetails = user.userdetails
     accounts = userdetails.accounts
-    return render_template('accounts.html', accounts=accounts, logged_in=True)
+    return render_template('accounts.html', title='Accounts', accounts=accounts, logged_in=True)
 
 @dashboard.route('/account/view/<account_index>')
 @token_required
@@ -118,9 +120,9 @@ def view_account(user: User, account_index: int) -> str:
     userdetails = user.userdetails
     account = userdetails.accounts[int(account_index)]
 
-    transactions = utility.get_reverse_sorted_transactions(userdetails)
+    transactions = utility.get_reverse_sorted_transactions(userdetails, account=account)
 
-    return render_template('account.html', account=account, transactions=transactions, logged_in=True)
+    return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=transactions, logged_in=True)
 
 @dashboard.route('/account/view/<account_index>/transaction/<transaction_index>', methods=['GET', 'POST'])
 @token_required
@@ -207,7 +209,9 @@ def create_transaction(user: User, type: str) -> str:
     userdetails = user.userdetails
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
+    transaction_form.account.choices.insert(0, (None, ''))
     transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
+    transaction_form.bill.choices.insert(0, (None, ''))
     transaction_form.type.data = 'deposit' if type == 'deposit' else 'withdraw'
 
     if request.method == 'POST':
@@ -288,7 +292,14 @@ def view_period(user: User, period_index: int) -> str:
 
     period_transactions.sort(key = lambda transaction: transaction.date)
 
-    return render_template('period.html', periods=periods, transactions=reversed(period_transactions), period_start=period.start, period_end=period.end, logged_in=True)
+    title = f'Current Period: {period.start.strftime("%d %B, %Y")} - {period.end.strftime("%d %B, %Y")}'
+    menu_items = [
+        utility.Menu('Other Periods', [
+            utility.MenuItem(f'{p.start.strftime("%d %B, %Y")} - {p.end.strftime("%d %B, %Y")}', f'/period/view/{periods.index(p)}') for p in periods
+        ])
+    ]
+
+    return render_template('period.html', title=title, menu_items=menu_items, periods=periods, transactions=reversed(period_transactions), period_start=period.start, period_end=period.end, logged_in=True)
 
 @dashboard.route('/bill/create', methods=['GET', 'POST'])
 @token_required
@@ -344,7 +355,7 @@ def view_bills(user):
             userdetails.bills.index(bill)
         ))
 
-    return render_template('bills.html', bills=bills, logged_in=True)
+    return render_template('bills.html', title='Bills', bills=bills, logged_in=True)
 
 @dashboard.route('/bill/edit/<bill_index>', methods=['GET', 'POST'])
 @token_required
@@ -403,4 +414,4 @@ def settings(user):
     settings_form.range.data = userdetails.range
     settings_form.period_start.data = userdetails.period_start
 
-    return render_template('settings.html', settings_form=settings_form, logged_in=True)
+    return render_template('settings.html', title="Settings", settings_form=settings_form, logged_in=True)

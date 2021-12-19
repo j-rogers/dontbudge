@@ -25,6 +25,16 @@ Bill = namedtuple('Bill', [
     'bill_index'
 ])
 
+Menu = namedtuple('Menu', [
+    'title',
+    'items'
+])
+
+MenuItem = namedtuple('MenuTuple', [
+    'title',
+    'link'
+])
+
 def get_relative(code):
     switch = {
         '1W': relativedelta(weeks=1),
@@ -36,9 +46,9 @@ def get_relative(code):
 
     return switch.get(code)
 
-def get_sorted_transactions(userdetails):
+def get_sorted_transactions(userdetails, account=None):
     transactions = []
-    for account in userdetails.accounts:
+    if account:
         for transaction in account.transactions:
             transactions.append(Transaction(
                 transaction.amount,
@@ -48,12 +58,23 @@ def get_sorted_transactions(userdetails):
                 account.transactions.index(transaction),
                 userdetails.accounts.index(account)
             ))
+    else:
+        for acc in userdetails.accounts:
+            for transaction in acc.transactions:
+                transactions.append(Transaction(
+                    transaction.amount,
+                    transaction.description,
+                    acc.name,
+                    transaction.date,
+                    acc.transactions.index(transaction),
+                    userdetails.accounts.index(acc)
+                ))
     
     transactions.sort(key = lambda transaction: transaction.date)
     return transactions
 
-def get_reverse_sorted_transactions(userdetails):
-    transactions = get_sorted_transactions(userdetails)
+def get_reverse_sorted_transactions(userdetails, account=None):
+    transactions = get_sorted_transactions(userdetails, account=account)
     return reversed(transactions)
 
 def get_periods(userdetails):

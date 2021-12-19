@@ -1,17 +1,26 @@
 {% extends 'header.html' %}
 
 {% block content %}
-<h1>Accounts</h1>
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Balance</th>
-    </tr>
-    {% for account in accounts %}
-    <tr>
-        <th><a href="/account/view/{{ accounts.index(account) }}">{{ account.name }}</th>
-        <th>{{ account.balance }}</th>
-    </tr>
-    {% endfor %}
-</table>
+<div class="container">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for account in accounts %}
+            <tr>
+                <th><a href="/account/view/{{ accounts.index(account) }}">{{ account.name }}</a></th>
+                {% if account.balance >= 0 %}
+                <th class="text-success">{{ account.balance }}</th>
+                {% else %}
+                <th class="text-danger">{{ account.balance }}</th>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

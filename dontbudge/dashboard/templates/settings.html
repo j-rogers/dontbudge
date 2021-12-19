@@ -1,15 +1,21 @@
 {% extends 'header.html' %}
 
 {% block content %}
-<h1>Settings</h1>
-<form action="", method="post">
-    {{ settings_form.hidden_tag() }}
-    <p>{{settings_form.range.label}}<br>
-    {{settings_form.range(size=5)}}<br>
-    </p>
-    <p>{{settings_form.period_start.label}}<br>
-    {{settings_form.period_start(size=5)}}<br>
-    </p>
-    <p>{{ settings_form.submit() }}</p>
-</form>
+<div class="w-75 position-absolute top-50 start-50 translate-middle" style="max-width: 800px;">
+    <form action="" method="post">
+        {{ settings_form.hidden_tag() }}
+        <div class="form-floating mb-3">
+            {{ settings_form.range(class_="form-control", placeholder_="range") }}
+            {{ settings_form.range.label(class_="form-label") }}
+        </div>
+        <div class="form-floating mb-3">
+            {{ settings_form.period_start(class_="form-control", placeholder_="period start") }}
+            {{ settings_form.period_start.label(class_="form-label") }}
+        </div>
+        <div class="text-center mb-3">
+            {{ settings_form.submit(class_="btn btn-primary text-center") }}
+        </div>
+    </form>
+</div>
+
 {% endblock %}

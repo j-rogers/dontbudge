@@ -1,25 +1,49 @@
 {% extends 'header.html' %}
 
 {% block content %}
-<h1>{{ title }}</h1>
-<form action="", method="post">
-    {{ transaction_form.hidden_tag() }}
-    <p>{{ transaction_form.description.label }}<br>
-    {{ transaction_form.description(size=32) }}<br>
-    </p>
-    <p>{{ transaction_form.account.label }}<br>
-    {{ transaction_form.account(size=5) }}<br>
-    </p>
-    <p>{{ transaction_form.amount.label }}<br>
-    {{ transaction_form.amount(size=32) }}<br>
-    </p>
-    <p>{{ transaction_form.date.label }}<br>
-    {{ transaction_form.date(size=32) }}<br>
-    </p>
-    <p>{{ transaction_form.bill.label }}<br>
-    {{ transaction_form.bill(size=5) }}<br>
-    </p>
-    <p>{{ transaction_form.type }}</p>
-    <p>{{ transaction_form.submit() }}</p>
-</form>
+<div class="w-75 position-absolute top-50 start-50 translate-middle" style="max-width: 800px;">
+    <form action="" method="post">
+        {{ transaction_form.hidden_tag() }}
+        {{ transaction_form.type }}
+        <div class="container">
+            <div class="row">
+                <div class="col-8">
+                    <div class="form-floating mb-3">
+                        {{ transaction_form.description(class_="form-control", placeholder_="description") }}
+                        {{ transaction_form.description.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ transaction_form.amount(class_="form-control", placeholder_="amount") }}
+                        {{ transaction_form.amount.label(class_="form-label") }}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ transaction_form.account(class_="form-control", placeholder_="account") }}
+                        {{ transaction_form.account.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ transaction_form.date(class_="form-control", placeholder_="date") }}
+                        {{ transaction_form.date.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ transaction_form.bill(class_="form-control", placeholder_="bill") }}
+                        {{ transaction_form.bill.label(class_="form-label") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mb-3">
+            {{ transaction_form.submit(class_="btn btn-primary text-center") }}
+        </div>
+    </form>
+</div>
 {% endblock %}
