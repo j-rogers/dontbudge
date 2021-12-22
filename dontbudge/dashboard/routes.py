@@ -12,7 +12,7 @@ from dontbudge.database import db
 from dontbudge.dashboard import dashboard, forms, utility
 from dontbudge.auth.jwt import token_required
 from dontbudge.auth.models import User
-from dontbudge.api.models import Account, Transaction, UserDetails, Bill, Period
+from dontbudge.api.models import Account, Category, Transaction, UserDetails, Bill, Period
 
 @dashboard.route('/', methods=['GET', 'POST'])
 def index():
@@ -149,6 +149,9 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
     transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
+    transaction_form.bill.choices.insert(0, (None, ''))
+    transaction_form.category.choices = [(category.id, category.name) for category in userdetails.categories]
+    transaction_form.category.choices.insert(0, (None, ''))
 
     # Update transaction details if any changed
     if transaction_form.validate_on_submit():
@@ -163,6 +166,8 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
             account.balance += transaction.amount if transaction_form.type.data == 'withdraw' else transaction.amount * -1
             transaction.amount = transaction_form.amount.data if transaction_form.type.data == 'deposit' else transaction_form.amount.data * -1
             account.balance += transaction.amount
+        if transaction.category_id != transaction_form.category.data:
+            transaction.category_id = transaction_form.category.data
         if transaction.date != transaction_form.date.data:
             transaction.date = transaction_form.date.data
         if transaction.bill_id != transaction_form.bill.data:
@@ -181,6 +186,7 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
     transaction_form.amount.data = transaction.amount if transaction.amount > 0 else transaction.amount * -1
     transaction_form.date.data = transaction.date
     transaction_form.bill.data = transaction.bill_id
+    transaction_form.category.data = transaction.category_id
     transaction_form.type.data = 'deposit' if transaction.amount >= 0 else 'withdraw'
 
     return render_template('create_transaction.html', title='Edit Transaction', transaction_form=transaction_form, logged_in=True)
@@ -210,6 +216,8 @@ def create_transaction(user: User, type: str) -> str:
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
     transaction_form.account.choices.insert(0, (None, ''))
+    transaction_form.category.choices = [(category.id, category.name) for category in userdetails.categories]
+    transaction_form.category.choices.insert(0, (None, ''))
     transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
     transaction_form.bill.choices.insert(0, (None, ''))
     transaction_form.type.data = 'deposit' if type == 'deposit' else 'withdraw'
@@ -235,8 +243,8 @@ def create_transaction(user: User, type: str) -> str:
                 account.balance += amount
 
             # Update next bill occurence since this one has been paid
-            if bill_id:
-                bill = Bill.query.filter_by(id=bill_id).first()
+            bill = Bill.query.filter_by(id=bill_id).first()
+            if bill:
                 bill.start = bill.start + utility.get_relative(bill.occurence)
 
             db.session.add(transaction)
@@ -386,6 +394,20 @@ def edit_bill(user, bill_index):
     bill_form.occurence.data = bill.occurence
     bill_form.amount.data = bill.amount
     return render_template('create_bill.html', title='Edit Bill', bill_form=bill_form, logged_in=True)
+
+@dashboard.route('/category/create', methods=['GET', 'POST'])
+@token_required
+def create_category(user):
+    userdetails = user.userdetails
+    category_form = forms.CategoryForm()
+
+    if category_form.validate_on_submit():
+        category = Category(category_form.name.data, userdetails.id)
+        db.session.add(category)
+        db.session.commit()
+        return redirect('/')
+
+    return render_template('create_category.html', title='Create Category', category_form=category_form, logged_in=True)
 
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required

@@ -8,6 +8,7 @@
                 <th scope="col">Amount</th>
                 <th scope="col">Description</th>
                 <th scope="col">Account</th>
+                <th scope="col">Category</th>
                 <th scope="col">Date</th>
             </tr>
         </thead>
@@ -21,6 +22,7 @@
                 {% endif %}
                 <th>{{ transaction.description }}</th>
                 <th>{{ transaction.account_name }}</th>
+                <th>{{ transaction.category }}</th>
                 <th>{{ transaction.date.strftime('%d %B, %Y') }}</th>
                 <th>
                     <a class="btn btn-light" role="button" href="/account/view/{{ transaction.account_index }}/transaction/{{ transaction.transaction_index }}">Edit</a>

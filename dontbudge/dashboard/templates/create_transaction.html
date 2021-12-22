@@ -35,6 +35,12 @@
                 </div>
                 <div class="col">
                     <div class="form-floating mb-3">
+                        {{ transaction_form.category(class_="form-control", placeholder_="bill") }}
+                        {{ transaction_form.category.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
                         {{ transaction_form.bill(class_="form-control", placeholder_="bill") }}
                         {{ transaction_form.bill.label(class_="form-label") }}
                     </div>

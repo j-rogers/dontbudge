@@ -24,6 +24,7 @@ class TransactionForm(FlaskForm):
     account = SelectField('Account', validators=[DataRequired()])
     amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     date = DateField('Date', validators=[DataRequired()])
+    category = SelectField('Category', validators=[Optional()])
     bill = SelectField('Bill', validators=[Optional()])
     type = HiddenField('type', validators=[AnyOf(('deposit', 'withdraw'))])
     submit = SubmitField('Submit')
@@ -60,4 +61,9 @@ class SettingsForm(FlaskForm):
         validators = [Optional()]
     )
     period_start = DateField('Period Start Date', validators=[Optional()])
+    submit = SubmitField('Submit')
+
+class CategoryForm(FlaskForm):
+    """Form for creating a Category"""
+    name = StringField('Name', validators=[DataRequired()])
     submit = SubmitField('Submit')

@@ -22,10 +22,12 @@ class Bill(db.Model):
 class Category(db.Model):
     __tablename__ = 'categories'
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
     name = db.Column(db.Integer)
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, user_id: int):
         self.name = name
+        self.user_id = user_id
 
 class Transaction(db.Model):
     __tablename__ = 'transactions'
@@ -80,6 +82,7 @@ class UserDetails(db.Model):
     accounts = relationship('Account', backref='user')
     periods = relationship('Period', backref='user')
     bills = relationship('Bill', backref='user')
+    categories = relationship('Category', backref='user')
 
     def __init__(self, name: str, user_id: int, range: str, period_start: date, period_end: date):
         self.name = name

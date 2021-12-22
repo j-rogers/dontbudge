@@ -2,10 +2,12 @@ from collections import namedtuple
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from dontbudge.database import db
+from dontbudge.api.models import Category
 
 Transaction = namedtuple('Transaction', [
     'amount',
     'description',
+    'category',
     'account_name',
     'date',
     'transaction_index',
@@ -50,9 +52,12 @@ def get_sorted_transactions(userdetails, account=None):
     transactions = []
     if account:
         for transaction in account.transactions:
+            category = Category.query.filter_by(id=transaction.category_id).first()
+            category_name = category.name if category else 'None'
             transactions.append(Transaction(
                 transaction.amount,
                 transaction.description,
+                category_name,
                 account.name,
                 transaction.date,
                 account.transactions.index(transaction),
@@ -61,9 +66,12 @@ def get_sorted_transactions(userdetails, account=None):
     else:
         for acc in userdetails.accounts:
             for transaction in acc.transactions:
+                category = Category.query.filter_by(id=transaction.category_id).first()
+                category_name = category.name if category else 'None'
                 transactions.append(Transaction(
                     transaction.amount,
                     transaction.description,
+                    category_name,
                     acc.name,
                     transaction.date,
                     acc.transactions.index(transaction),
