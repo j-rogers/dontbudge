@@ -1,0 +1,23 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<div class="container">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr>
+                <th>{{ category.name }}</th>
+                <th>
+                    <a class="btn btn-light" role="button" href="/category/edit/{{ category.category_index }}">Edit</a>
+                </th>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

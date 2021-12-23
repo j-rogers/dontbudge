@@ -2,6 +2,11 @@
 
 Contains the routes for the dashboard.
 
+TODO:
+    - Add Budgets (and display remaining budgets on dashboard)
+    - Be able to delete stuff (transactions/bills/etc)
+    - Make sure all data passed to templates is given in named tuple from the utility file
+
 Author: Josh Rogers (2021)
 """
 from flask import request, redirect, render_template
@@ -394,6 +399,32 @@ def edit_bill(user, bill_index):
     bill_form.occurence.data = bill.occurence
     bill_form.amount.data = bill.amount
     return render_template('create_bill.html', title='Edit Bill', bill_form=bill_form, logged_in=True)
+
+@dashboard.route('/category/view')
+@token_required
+def view_categories(user):
+    userdetails = user.userdetails
+    categories = utility.get_categories(userdetails)
+
+    return render_template('categories.html', title='Categories', categories=categories, logged_in=True)
+
+@dashboard.route('/category/edit/<category_index>', methods=['GET', 'POST'])
+@token_required
+def edit_category(user, category_index):
+    userdetails = user.userdetails
+    category_form = forms.CategoryForm()
+    category = userdetails.categories[int(category_index)]
+
+    if category_form.validate_on_submit():
+        if category.name != category_form.name.data:
+            category.name = category_form.name.data
+
+        db.session.commit()
+        return redirect('/')
+
+    category_form.name.data = category.name
+
+    return render_template('create_category.html', title='Edit Category', category_form=category_form, logged_in=True)
 
 @dashboard.route('/category/create', methods=['GET', 'POST'])
 @token_required

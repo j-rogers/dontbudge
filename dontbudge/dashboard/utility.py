@@ -27,6 +27,11 @@ Bill = namedtuple('Bill', [
     'bill_index'
 ])
 
+CategoryT = namedtuple('CategoryT', [
+    'name',
+    'category_index'
+])
+
 Menu = namedtuple('Menu', [
     'title',
     'items'
@@ -98,6 +103,10 @@ def get_periods(userdetails):
             periods.append(period)
 
     return periods
+
+def get_categories(userdetails):
+    categories = [CategoryT(category.name, userdetails.categories.index(category)) for category in userdetails.categories]
+    return categories
 
 def update(userdetails):
     # Modify current period if needed
