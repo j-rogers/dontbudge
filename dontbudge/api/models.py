@@ -19,6 +19,18 @@ class Bill(db.Model):
         self.user_id = user_id
         self.amount = amount
 
+class Budget(db.Model):
+    __tablename__ = 'budgets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
+    name = db.Column(db.Integer)
+    amount = db.Column(db.Numeric(scale=2))
+
+    def __init__(self, name: str, user_id: int, amount: Decimal):
+        self.name = name
+        self.user_id = user_id
+        self.amount = amount
+
 class Category(db.Model):
     __tablename__ = 'categories'
     id = db.Column(db.Integer, primary_key=True)
@@ -35,16 +47,19 @@ class Transaction(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
     bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+    budget_id = db.Column(db.Integer, db.ForeignKey('budgets.id'))
     description = db.Column(db.String(100))
     date = db.Column(db.DateTime)
     amount = db.Column(db.Numeric(scale=2))
 
-    def __init__(self, account_id: int, description: str, date: date, amount: Decimal, bill_id: int = None):
+    def __init__(self, account_id: int, description: str, date: date, amount: Decimal, bill_id: int = None, category_id: int = None, budget_id: int = None):
         self.account_id = account_id
         self.description = description
         self.date = date
         self.amount = amount
         self.bill_id = bill_id
+        self.category_id = category_id
+        self.budget_id = budget_id
 
 class Period(db.Model):
     __tablename__ = 'periods'
@@ -83,6 +98,7 @@ class UserDetails(db.Model):
     periods = relationship('Period', backref='user')
     bills = relationship('Bill', backref='user')
     categories = relationship('Category', backref='user')
+    budgets = relationship('Budget', backref='user')
 
     def __init__(self, name: str, user_id: int, range: str, period_start: date, period_end: date):
         self.name = name

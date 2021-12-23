@@ -2,12 +2,13 @@ from collections import namedtuple
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from dontbudge.database import db
-from dontbudge.api.models import Category
+from dontbudge.api.models import Category, Budget
 
 Transaction = namedtuple('Transaction', [
     'amount',
     'description',
     'category',
+    'budget',
     'account_name',
     'date',
     'transaction_index',
@@ -30,6 +31,12 @@ Bill = namedtuple('Bill', [
 CategoryT = namedtuple('CategoryT', [
     'name',
     'category_index'
+])
+
+BudgetT = namedtuple('BudgetT', [
+    'name',
+    'used',
+    'amount'
 ])
 
 Menu = namedtuple('Menu', [
@@ -59,10 +66,12 @@ def get_sorted_transactions(userdetails, account=None):
         for transaction in account.transactions:
             category = Category.query.filter_by(id=transaction.category_id).first()
             category_name = category.name if category else 'None'
+            budget = Budget.query.filter_by(id=transaction.budget_id).first()
             transactions.append(Transaction(
                 transaction.amount,
                 transaction.description,
                 category_name,
+                budget,
                 account.name,
                 transaction.date,
                 account.transactions.index(transaction),
@@ -73,10 +82,12 @@ def get_sorted_transactions(userdetails, account=None):
             for transaction in acc.transactions:
                 category = Category.query.filter_by(id=transaction.category_id).first()
                 category_name = category.name if category else 'None'
+                budget = Budget.query.filter_by(id=transaction.budget_id).first()
                 transactions.append(Transaction(
                     transaction.amount,
                     transaction.description,
                     category_name,
+                    budget,
                     acc.name,
                     transaction.date,
                     acc.transactions.index(transaction),
@@ -107,6 +118,27 @@ def get_periods(userdetails):
 def get_categories(userdetails):
     categories = [CategoryT(category.name, userdetails.categories.index(category)) for category in userdetails.categories]
     return categories
+
+def get_budgets(userdetails):
+    # Get transactions in this period
+    transactions = get_sorted_transactions(userdetails)
+    period = get_periods(userdetails)[-1]
+    period_transactions = []
+    for transaction in transactions:
+        if period.start <= transaction.date < period.end:
+            period_transactions.append(transaction)
+    
+    # Calculate used amounts for current period
+    used = {budget.name: 0 for budget in userdetails.budgets}
+    for transaction in transactions:
+        if transaction.budget:
+            used[transaction.budget.name] -= transaction.amount
+
+    budgets = []
+    for budget in userdetails.budgets:
+        budgets.append(BudgetT(budget.name, used[budget.name], budget.amount))
+
+    return budgets
 
 def update(userdetails):
     # Modify current period if needed

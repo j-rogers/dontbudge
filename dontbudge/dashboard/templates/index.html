@@ -3,6 +3,31 @@
 {% block content %}
 <div class="container">
     <div class="row">
+        <h1 class="text-center">Budgets</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Used</th>
+                    <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for budget in budgets %}
+                <tr>
+                    <th>{{ budget.name }}</th>
+                    {% if budget.used < budget.amount %}
+                    <th class="text-success">{{ budget.used }}</th>
+                    {% else %}
+                    <th class="text-danger">{{ budget.used }}</th>
+                    {% endif %}
+                    <th>{{ budget.amount }}</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="row">
         <div class="col">
             <h1 class="text-center">Accounts</h1>
             {% for account in accounts %}

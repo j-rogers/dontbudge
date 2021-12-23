@@ -6,6 +6,7 @@ validation.
 
 Author: Josh Rogers (2021)
 """
+from flask.app import Flask
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, DateField, SelectField, DecimalField
 from wtforms.fields.numeric import IntegerField
@@ -25,6 +26,7 @@ class TransactionForm(FlaskForm):
     amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     date = DateField('Date', validators=[DataRequired()])
     category = SelectField('Category', validators=[Optional()])
+    budget = SelectField('Budget', validators=[Optional()])
     bill = SelectField('Bill', validators=[Optional()])
     type = HiddenField('type', validators=[AnyOf(('deposit', 'withdraw'))])
     submit = SubmitField('Submit')
@@ -66,4 +68,10 @@ class SettingsForm(FlaskForm):
 class CategoryForm(FlaskForm):
     """Form for creating a Category"""
     name = StringField('Name', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+class BudgetForm(FlaskForm):
+    """Form for creating a Budget"""
+    name = StringField('Name', validators=[DataRequired()])
+    amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Submit')

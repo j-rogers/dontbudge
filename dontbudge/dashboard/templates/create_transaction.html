@@ -33,10 +33,18 @@
                         {{ transaction_form.date.label(class_="form-label") }}
                     </div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col">
                     <div class="form-floating mb-3">
                         {{ transaction_form.category(class_="form-control", placeholder_="bill") }}
                         {{ transaction_form.category.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ transaction_form.budget(class_="form-control", placeholder_="budget") }}
+                        {{ transaction_form.budget.label(class_="form-label") }}
                     </div>
                 </div>
                 <div class="col">

@@ -3,7 +3,6 @@
 Contains the routes for the dashboard.
 
 TODO:
-    - Add Budgets (and display remaining budgets on dashboard)
     - Be able to delete stuff (transactions/bills/etc)
     - Make sure all data passed to templates is given in named tuple from the utility file
 
@@ -17,7 +16,7 @@ from dontbudge.database import db
 from dontbudge.dashboard import dashboard, forms, utility
 from dontbudge.auth.jwt import token_required
 from dontbudge.auth.models import User
-from dontbudge.api.models import Account, Category, Transaction, UserDetails, Bill, Period
+from dontbudge.api.models import Account, Category, Transaction, Budget, Bill
 
 @dashboard.route('/', methods=['GET', 'POST'])
 def index():
@@ -58,7 +57,9 @@ def render_index(user: User) -> str:
 
     title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
-    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, logged_in=True)
+    budgets = utility.get_budgets(userdetails)
+
+    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, budgets=budgets, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
@@ -153,10 +154,12 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
     # Create form
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
-    transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
+    transaction_form.bill.choices = [(bill.id, bill.name) for bill in userdetails.bills]
     transaction_form.bill.choices.insert(0, (None, ''))
     transaction_form.category.choices = [(category.id, category.name) for category in userdetails.categories]
     transaction_form.category.choices.insert(0, (None, ''))
+    transaction_form.budget.choices = [(budget.id, budget.name) for budget in userdetails.budgets]
+    transaction_form.budget.choices.insert(0, (None, ''))
 
     # Update transaction details if any changed
     if transaction_form.validate_on_submit():
@@ -173,6 +176,8 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
             account.balance += transaction.amount
         if transaction.category_id != transaction_form.category.data:
             transaction.category_id = transaction_form.category.data
+        if transaction.budget_id != transaction_form.category.data:
+            transaction.budget_id = transaction_form.budget.data
         if transaction.date != transaction_form.date.data:
             transaction.date = transaction_form.date.data
         if transaction.bill_id != transaction_form.bill.data:
@@ -190,9 +195,17 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
     transaction_form.account.data = account.id
     transaction_form.amount.data = transaction.amount if transaction.amount > 0 else transaction.amount * -1
     transaction_form.date.data = transaction.date
-    transaction_form.bill.data = transaction.bill_id
-    transaction_form.category.data = transaction.category_id
     transaction_form.type.data = 'deposit' if transaction.amount >= 0 else 'withdraw'
+
+    bill = Bill.query.filter_by(id=transaction.bill_id).first()
+    budget = Budget.query.filter_by(id=transaction.budget_id).first()
+    category = Category.query.filter_by(id=transaction.category_id).first()
+    if bill:
+        transaction_form.bill.choices.insert(0, (transaction.bill_id, Bill.query.filter_by(id=transaction.bill_id).first().name))
+    if budget:
+        transaction_form.budget.choices.insert(0, (transaction.budget_id, Budget.query.filter_by(id=transaction.budget_id).first().name))
+    if category:
+        transaction_form.category.choices.insert(0, (transaction.category_id, Category.query.filter_by(id=transaction.category_id).first().name))
 
     return render_template('create_transaction.html', title='Edit Transaction', transaction_form=transaction_form, logged_in=True)
 
@@ -223,6 +236,8 @@ def create_transaction(user: User, type: str) -> str:
     transaction_form.account.choices.insert(0, (None, ''))
     transaction_form.category.choices = [(category.id, category.name) for category in userdetails.categories]
     transaction_form.category.choices.insert(0, (None, ''))
+    transaction_form.budget.choices = [(budget.id, budget.name) for budget in userdetails.budgets]
+    transaction_form.budget.choices.insert(0, (None, ''))
     transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
     transaction_form.bill.choices.insert(0, (None, ''))
     transaction_form.type.data = 'deposit' if type == 'deposit' else 'withdraw'
@@ -235,15 +250,17 @@ def create_transaction(user: User, type: str) -> str:
             amount = transaction_form.amount.data
             date = transaction_form.date.data
             bill_id = transaction_form.bill.data
+            category_id = transaction_form.category.data
+            budget_id = transaction_form.budget.data
 
             # Create the Transaction and take/add the amount from the specified account
             transaction = None
             if type == 'withdraw':
-                transaction = Transaction(account_id, description, date, amount * -1, bill_id)
+                transaction = Transaction(account_id, description, date, amount * -1, bill_id, category_id, budget_id)
                 account = Account.query.filter_by(id=account_id).first()
                 account.balance -= amount
             elif type == 'deposit':
-                transaction = Transaction(account_id, description, date, amount, bill_id)
+                transaction = Transaction(account_id, description, date, amount, bill_id, category_id, budget_id)
                 account = Account.query.filter_by(id=account_id).first()
                 account.balance += amount
 
@@ -439,6 +456,29 @@ def create_category(user):
         return redirect('/')
 
     return render_template('create_category.html', title='Create Category', category_form=category_form, logged_in=True)
+
+@dashboard.route('/budget/view')
+@token_required
+def view_budgets(user):
+    userdetails = user.userdetails
+    budgets = utility.get_budgets(userdetails)
+
+    return render_template('budgets.html', title='Budgets', budgets=budgets, logged_in=True)
+
+@dashboard.route('/budget/create', methods=['GET', 'POST'])
+@token_required
+def create_budget(user):
+    userdetails = user.userdetails
+    budget_form = forms.BudgetForm()
+
+    if budget_form.validate_on_submit():
+        budget = Budget(budget_form.name.data, userdetails.id, budget_form.amount.data)
+        db.session.add(budget)
+        db.session.commit()
+
+        return redirect('/')
+
+    return render_template('create_budget.html', title='Create Budget', budget_form=budget_form, logged_in=True)
 
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required

@@ -1,0 +1,20 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<div class="w-75 position-absolute top-50 start-50 translate-middle" style="max-width: 800px;">
+    <form action="" method="post">
+        {{ budget_form.hidden_tag() }}
+        <div class="form-floating mb-3">
+            {{ budget_form.name(class_="form-control", placeholder_="name") }}
+            {{ budget_form.name.label(class_="form-label") }}
+        </div>
+        <div class="form-floating mb-3">
+            {{ budget_form.amount(class_="form-control", placeholder_="amount") }}
+            {{ budget_form.amount.label(class_="form-label") }}
+        </div>
+        <div class="text-center mb-3">
+            {{ budget_form.submit(class_="btn btn-primary text-center") }}
+        </div>
+    </form>
+</div>
+{% endblock %}
