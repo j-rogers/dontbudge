@@ -18,6 +18,9 @@
                 {% else %}
                 <th class="text-danger">{{ account.balance }}</th>
                 {% endif %}
+                <th>
+                    <a class="btn btn-light" role="button" href="/account/edit/{{ accounts.index(account) }}">Edit</a>
+                </th>
             </tr>
             {% endfor %}
         </tbody>

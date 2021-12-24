@@ -6,14 +6,12 @@ validation.
 
 Author: Josh Rogers (2021)
 """
-from flask.app import Flask
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, DateField, SelectField, DecimalField
-from wtforms.fields.numeric import IntegerField
 from wtforms.fields.simple import HiddenField
 from wtforms.validators import DataRequired, NumberRange, Optional, AnyOf
 
-class NewAccountForm(FlaskForm):
+class AccountForm(FlaskForm):
     """Form for creating a new Account"""
     name = StringField('Account Name', validators=[DataRequired()])
     starting_balance = DecimalField('Starting Balance', validators=[DataRequired()])

@@ -66,16 +66,15 @@ def create_account(user: User) -> str:
         A rendered create_account.html page
     """
     userdetails = user.userdetails
-    new_account_form = forms.NewAccountForm()
+    new_account_form = forms.AccountForm()
 
-    if request.method == 'POST':
-        if new_account_form.validate_on_submit():
-            name = new_account_form.name.data
-            starting_balance = new_account_form.starting_balance.data
-            account = Account(name, starting_balance, userdetails.id)
-            db.session.add(account)
-            db.session.commit()
-            return redirect('/')
+    if new_account_form.validate_on_submit():
+        name = new_account_form.name.data
+        starting_balance = new_account_form.starting_balance.data
+        account = Account(name, starting_balance, userdetails.id)
+        db.session.add(account)
+        db.session.commit()
+        return redirect('/')
 
     return render_template('create_account.html', title='New Account', new_account_form=new_account_form, logged_in=True)
 
@@ -123,9 +122,36 @@ def view_account(user: User, account_index: int) -> str:
 
     return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=transactions, logged_in=True)
 
+@dashboard.route('/account/edit/<account_index>')
+@token_required
+def edit_account(user, account_index):
+    userdetails = user.userdetails
+    try:
+        account = userdetails.accounts[int(account_index)]
+    except ValueError:
+        redirect('/')
+    form = forms.AccountForm()
+
+    if form.validate_on_submit():
+        # Name
+        if account.name != form.name.data:
+            account.name = form.name.data
+
+        # Balance
+        if account.balance != form.starting_balance.data:
+            account.balance = form.starting_balance.data
+
+        db.session.commit()
+
+    # Defaults
+    form.name.data = account.name
+    form.starting_balance.data = account.balance
+
+    return render_template('create_account.html', title='Edit Account', new_account_form=form, logged_in=True)
+
 @dashboard.route('/transaction/edit/<transaction_index>', methods=['GET', 'POST'])
 @token_required
-def view_transaction(user: User, transaction_index: int) -> str:
+def edit_transaction(user: User, transaction_index: int) -> str:
     """View a given transaction of an account
 
     Renders a page for viewing and editing the details of an existing transaction.
@@ -493,6 +519,34 @@ def create_budget(user):
         return redirect('/')
 
     return render_template('create_budget.html', title='Create Budget', budget_form=budget_form, logged_in=True)
+
+@dashboard.route('/budget/edit/<budget_index>')
+@token_required
+def edit_budget(user, budget_index):
+    userdetails = user.userdetails
+    try:
+        budget = userdetails.budgets[int(budget_index)]
+    except ValueError:
+        redirect('/')
+    form = forms.BudgetForm()
+
+    if form.validate_on_submit():
+        # Name
+        if budget.name != form.name.data:
+            budget.name = form.name.data
+
+        # Amount
+        if budget.amount != form.amount.data:
+            budget.amount = form.amount.data
+
+        db.session.commit()
+
+    # Defaults
+    form.name.data = budget.name
+    form.amount.data = budget.amount
+
+    return render_template('create_budget.html', title='Edit Budget', budget_form=form, logged_in=True)
+
 
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required
