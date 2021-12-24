@@ -25,7 +25,7 @@
                 <th>{{ transaction.category }}</th>
                 <th>{{ transaction.date.strftime('%d %B, %Y') }}</th>
                 <th>
-                    <a class="btn btn-light" role="button" href="/account/view/{{ transaction.account_index }}/transaction/{{ transaction.transaction_index }}">Edit</a>
+                    <a class="btn btn-light" role="button" href="/transaction/edit/{{ transaction.transaction_index }}">Edit</a>
                 </th>
             </tr>
             {% endfor %}

@@ -4,13 +4,10 @@ Contains the routes for the dashboard.
 
 TODO:
     - Be able to delete stuff (transactions/bills/etc)
-    - Make sure all data passed to templates is given in named tuple from the utility file
 
 Author: Josh Rogers (2021)
 """
 from flask import request, redirect, render_template
-from datetime import timedelta, date
-from dateutil.relativedelta import relativedelta
 from werkzeug.wrappers.response import Response
 from dontbudge.database import db
 from dontbudge.dashboard import dashboard, forms, utility
@@ -18,24 +15,13 @@ from dontbudge.auth.jwt import token_required
 from dontbudge.auth.models import User
 from dontbudge.api.models import Account, Category, Transaction, Budget, Bill
 
-@dashboard.route('/', methods=['GET', 'POST'])
-def index():
-    """Index
-
-    Checks if the JWT token cookie is present, if not then redirect to login.
-    """
-    if not request.cookies.get('token'):
-        return redirect('/login')
-
-    return render_index()
-
+@dashboard.route('/')
 @token_required
-def render_index(user: User) -> str:
+def index(user: User) -> str:
     """Renders index
 
-    The index is rendered in a seperate function to index() so that the @token_required
-    decorater can be used for easier authentication. The index contains basic user
-    information such as accounts and recent transactions in the current period.
+    The index contains basic user information such as accounts and recent 
+    transactions in the current period.
 
     Args:
         user -> dontbudge.auth.models.User: Authenticated User model
@@ -44,20 +30,24 @@ def render_index(user: User) -> str:
         A rendered index.html template
     """
     userdetails = user.userdetails
-    accounts = userdetails.accounts
-    
     utility.update(userdetails)
 
     # Check what bills will be due in the current period
-    bills = userdetails.bills
     active_bills = []
-    for bill in bills:
+    for bill in userdetails.bills:
         if userdetails.period_start <= bill.start < userdetails.period_end:
             active_bills.append(bill)
 
-    title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
-
+    # Get budgets
     budgets = utility.get_budgets(userdetails)
+
+    # Get account information
+    accounts = []
+    for account in userdetails.accounts:
+        account, transactions = utility.get_account_transactions(account)
+        accounts.append((account, transactions))
+
+    title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
     return render_template('index.html', title=title, accounts=accounts, bills=active_bills, budgets=budgets, logged_in=True)
 
@@ -124,62 +114,79 @@ def view_account(user: User, account_index: int) -> str:
         Rendered account.html template
     """
     userdetails = user.userdetails
-    account = userdetails.accounts[int(account_index)]
+    try:
+        account = userdetails.accounts[int(account_index)]
+    except ValueError:
+        redirect('/')
 
-    transactions = utility.get_reverse_sorted_transactions(userdetails, account=account)
+    account, transactions = utility.get_account_transactions(account)
 
     return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=transactions, logged_in=True)
 
-@dashboard.route('/account/view/<account_index>/transaction/<transaction_index>', methods=['GET', 'POST'])
+@dashboard.route('/transaction/edit/<transaction_index>', methods=['GET', 'POST'])
 @token_required
-def view_transaction(user: User, account_index: int, transaction_index: int) -> str:
+def view_transaction(user: User, transaction_index: int) -> str:
     """View a given transaction of an account
 
-    Renders a page for viewing and editing the details of an existing transaction
-    for a given account. A valid JWT token is required to access this endpoint.
+    Renders a page for viewing and editing the details of an existing transaction.
+    A valid JWT token is required to access this endpoint.
 
     Args:
         user -> dontbudge.auth.models.User: Authenticated User model
-        account_index -> Integer: Index of the account in the UserDetails.accounts list
-        transaction_index -> Integer: Index of the transaction in the Accounts.transactions list
+        transaction_index -> Integer: Index of the transaction in the UserDetails.transactions list
 
     Returns:
         A rendered create_transaction.html template
     """
     # Get current details
     userdetails = user.userdetails
-    account = userdetails.accounts[int(account_index)]
-    transaction = account.transactions[int(transaction_index)]
+    try:
+        transaction = userdetails.transactions[int(transaction_index)]
+    except:
+        redirect('/')
     
     # Create form
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
     transaction_form.bill.choices = [(bill.id, bill.name) for bill in userdetails.bills]
-    transaction_form.bill.choices.insert(0, (None, ''))
+    transaction_form.bill.choices.insert(0, (None, 'None'))
     transaction_form.category.choices = [(category.id, category.name) for category in userdetails.categories]
-    transaction_form.category.choices.insert(0, (None, ''))
+    transaction_form.category.choices.insert(0, (None, 'None'))
     transaction_form.budget.choices = [(budget.id, budget.name) for budget in userdetails.budgets]
-    transaction_form.budget.choices.insert(0, (None, ''))
+    transaction_form.budget.choices.insert(0, (None, 'None'))
 
     # Update transaction details if any changed
     if transaction_form.validate_on_submit():
+        # Description
         if transaction.description != transaction_form.description.data:
             transaction.description = transaction_form.description.data
+
+        # Account
         if transaction.account_id != transaction_form.account.data:
             transaction.account_id = transaction_form.account.data
-            account.balance -= transaction.amount
+            transaction.account.balance -= transaction.amount
             new_account = Account.query.filter_by(id=transaction_form.account.data).first()
             new_account.balance += transaction.amount
+
+        # Amount
         if transaction.amount != transaction_form.amount.data:
-            account.balance += transaction.amount if transaction_form.type.data == 'withdraw' else transaction.amount * -1
+            transaction.account.balance += transaction.amount if transaction_form.type.data == 'withdraw' else transaction.amount * -1
             transaction.amount = transaction_form.amount.data if transaction_form.type.data == 'deposit' else transaction_form.amount.data * -1
-            account.balance += transaction.amount
+            transaction.account.balance += transaction.amount
+
+        # Category
         if transaction.category_id != transaction_form.category.data:
             transaction.category_id = transaction_form.category.data
+
+        # Budget
         if transaction.budget_id != transaction_form.category.data:
             transaction.budget_id = transaction_form.budget.data
+
+        # Date
         if transaction.date != transaction_form.date.data:
             transaction.date = transaction_form.date.data
+        
+        # Bill
         if transaction.bill_id != transaction_form.bill.data:
             transaction.bill_id = transaction_form.bill.data
             bill = Bill.query.filter_by(id=transaction_form.bill.data).first()
@@ -192,7 +199,7 @@ def view_transaction(user: User, account_index: int, transaction_index: int) -> 
 
     # Fill in existing details
     transaction_form.description.data = transaction.description
-    transaction_form.account.data = account.id
+    transaction_form.account.data = transaction.account_id
     transaction_form.amount.data = transaction.amount if transaction.amount > 0 else transaction.amount * -1
     transaction_form.date.data = transaction.date
     transaction_form.type.data = 'deposit' if transaction.amount >= 0 else 'withdraw'
@@ -233,13 +240,13 @@ def create_transaction(user: User, type: str) -> str:
     userdetails = user.userdetails
     transaction_form = forms.TransactionForm()
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
-    transaction_form.account.choices.insert(0, (None, ''))
+    transaction_form.account.choices.insert(0, (None, 'Please Select'))
     transaction_form.category.choices = [(category.id, category.name) for category in userdetails.categories]
-    transaction_form.category.choices.insert(0, (None, ''))
+    transaction_form.category.choices.insert(0, (None, 'None'))
     transaction_form.budget.choices = [(budget.id, budget.name) for budget in userdetails.budgets]
-    transaction_form.budget.choices.insert(0, (None, ''))
-    transaction_form.bill.choices = [(bill.id, bill.name) for bill in Bill.query.all()]
-    transaction_form.bill.choices.insert(0, (None, ''))
+    transaction_form.budget.choices.insert(0, (None, 'None'))
+    transaction_form.bill.choices = [(bill.id, bill.name) for bill in userdetails.bills]
+    transaction_form.bill.choices.insert(0, (None, 'None'))
     transaction_form.type.data = 'deposit' if type == 'deposit' else 'withdraw'
 
     if request.method == 'POST':
@@ -256,11 +263,11 @@ def create_transaction(user: User, type: str) -> str:
             # Create the Transaction and take/add the amount from the specified account
             transaction = None
             if type == 'withdraw':
-                transaction = Transaction(account_id, description, date, amount * -1, bill_id, category_id, budget_id)
+                transaction = Transaction(userdetails.id, account_id, description, date, amount * -1, bill_id, category_id, budget_id)
                 account = Account.query.filter_by(id=account_id).first()
                 account.balance -= amount
             elif type == 'deposit':
-                transaction = Transaction(account_id, description, date, amount, bill_id, category_id, budget_id)
+                transaction = Transaction(userdetails.id, account_id, description, date, amount, bill_id, category_id, budget_id)
                 account = Account.query.filter_by(id=account_id).first()
                 account.balance += amount
 
@@ -311,16 +318,17 @@ def view_period(user: User, period_index: int) -> str:
     """
     userdetails = user.userdetails
     periods = utility.get_periods(userdetails)
-    period = periods[int(period_index)]
-    transactions = utility.get_sorted_transactions(userdetails)
+    try:
+        period = periods[int(period_index)]
+    except ValueError:
+        return redirect('/')
+    transactions = utility.get_transactions(userdetails)
 
     # Get transactions in this period
     period_transactions = []
     for transaction in transactions:
         if period.start <= transaction.date < period.end:
             period_transactions.append(transaction)
-
-    period_transactions.sort(key = lambda transaction: transaction.date)
 
     title = f'Current Period: {period.start.strftime("%d %B, %Y")} - {period.end.strftime("%d %B, %Y")}'
     menu_items = [
@@ -391,7 +399,10 @@ def view_bills(user):
 @token_required
 def edit_bill(user, bill_index):
     userdetails = user.userdetails
-    bill = userdetails.bills[int(bill_index)]
+    try:
+        bill = userdetails.bills[int(bill_index)]
+    except ValueError:
+        redirect ('/')
     bill_form = forms.BillForm()
 
     if bill_form.validate_on_submit():
@@ -430,7 +441,10 @@ def view_categories(user):
 def edit_category(user, category_index):
     userdetails = user.userdetails
     category_form = forms.CategoryForm()
-    category = userdetails.categories[int(category_index)]
+    try:
+        category = userdetails.categories[int(category_index)]
+    except ValueError:
+        redirect('/')
 
     if category_form.validate_on_submit():
         if category.name != category_form.name.data:
@@ -490,12 +504,13 @@ def settings(user):
         range = settings_form.range.data
         period_start = settings_form.period_start.data
 
-        # Change if there is a difference
+        # Period start
         if userdetails.period_start != period_start:
             userdetails.period_start = period_start
             userdetails.period_end = userdetails.period_start + utility.get_relative(userdetails.range)
             db.session.commit()
 
+        # Range
         if userdetails.range != range:
             userdetails.range = range
             userdetails.period_end = userdetails.period_start + utility.get_relative(range)

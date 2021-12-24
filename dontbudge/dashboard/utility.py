@@ -1,8 +1,13 @@
 from collections import namedtuple
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from dontbudge.api.models import UserDetails
 from dontbudge.database import db
-from dontbudge.api.models import Category, Budget
+
+Account = namedtuple('Account', [
+    'name',
+    'balance'
+])
 
 Transaction = namedtuple('Transaction', [
     'amount',
@@ -12,7 +17,6 @@ Transaction = namedtuple('Transaction', [
     'account_name',
     'date',
     'transaction_index',
-    'account_index'
 ])
 
 Period = namedtuple('Period', [
@@ -28,12 +32,12 @@ Bill = namedtuple('Bill', [
     'bill_index'
 ])
 
-CategoryT = namedtuple('CategoryT', [
+Category = namedtuple('Category', [
     'name',
     'category_index'
 ])
 
-BudgetT = namedtuple('BudgetT', [
+Budget = namedtuple('Budget', [
     'name',
     'used',
     'amount'
@@ -60,52 +64,61 @@ def get_relative(code):
 
     return switch.get(code)
 
-def get_sorted_transactions(userdetails, account=None):
+def get_transaction(transaction):
+    """Get a single transaction
+
+    Converts a Transaction Model object into a named tuple Transaction object to
+    be used in Jinja templates.
+
+    Args:
+        transaction: dontbudge.api.models.Transaction: Transaction to be converted
+    
+    Returns:
+        A dontbudge.dashboard.utility.Transaction named tuple
+    """
+    return Transaction(
+            transaction.amount,
+            transaction.description,
+            transaction.category.name if transaction.category else 'None',
+            transaction.budget.name if transaction.budget else 'None',
+            transaction.account.name,
+            transaction.date,
+            transaction.user.transactions.index(transaction)
+    )
+
+def get_transactions(userdetails):
+    """Get all transactions of a user
+    
+    Retrieves all transactions of the given user and returns a sorted list. The
+    transactions are in a named tuple Transaction, ready for use in templates.
+
+    Args:
+        userdetails -> dontbudge.api.models.UserDetails: User to get transactions of
+    
+    Returns:
+        Sorted list of all dontbudge.dashboard.utility.Transaction's of the user
+    """
     transactions = []
-    if account:
-        for transaction in account.transactions:
-            category = Category.query.filter_by(id=transaction.category_id).first()
-            category_name = category.name if category else 'None'
-            budget = Budget.query.filter_by(id=transaction.budget_id).first()
-            transactions.append(Transaction(
-                transaction.amount,
-                transaction.description,
-                category_name,
-                budget,
-                account.name,
-                transaction.date,
-                account.transactions.index(transaction),
-                userdetails.accounts.index(account)
-            ))
-    else:
-        for acc in userdetails.accounts:
-            for transaction in acc.transactions:
-                category = Category.query.filter_by(id=transaction.category_id).first()
-                category_name = category.name if category else 'None'
-                budget = Budget.query.filter_by(id=transaction.budget_id).first()
-                transactions.append(Transaction(
-                    transaction.amount,
-                    transaction.description,
-                    category_name,
-                    budget,
-                    acc.name,
-                    transaction.date,
-                    acc.transactions.index(transaction),
-                    userdetails.accounts.index(acc)
-                ))
+    for transaction in userdetails.transactions:
+        transactions.append(get_transaction(transaction))
     
     transactions.sort(key = lambda transaction: transaction.date)
     return transactions
 
-def get_reverse_sorted_transactions(userdetails, account=None):
-    transactions = get_sorted_transactions(userdetails, account=account)
-    return reversed(transactions)
+def get_account_transactions(account):
+    """Get all sorted transactions of an account"""
+    transactions = []
+    for transaction in account.transactions:
+        transactions.append(get_transaction(transaction))
+
+    transactions.sort(key = lambda transaction: transaction.date)
+    return Account(account.name, account.balance), reversed(transactions)
 
 def get_periods(userdetails):
     range = get_relative(userdetails.range)
     periods = []
 
-    for transaction in get_sorted_transactions(userdetails):
+    for transaction in get_transactions(userdetails):
         start = userdetails.period_start
         while transaction.date < start:
             start -= range
@@ -116,27 +129,27 @@ def get_periods(userdetails):
     return periods
 
 def get_categories(userdetails):
-    categories = [CategoryT(category.name, userdetails.categories.index(category)) for category in userdetails.categories]
+    categories = [Category(category.name, userdetails.categories.index(category)) for category in userdetails.categories]
     return categories
 
 def get_budgets(userdetails):
-    # Get transactions in this period
-    transactions = get_sorted_transactions(userdetails)
-    period = get_periods(userdetails)[-1]
-    period_transactions = []
-    for transaction in transactions:
-        if period.start <= transaction.date < period.end:
-            period_transactions.append(transaction)
-    
+    # Get current period
+    periods = get_periods(userdetails)
+    if not periods:
+        return []
+    period = periods[-1]
+
     # Calculate used amounts for current period
-    used = {budget.name: 0 for budget in userdetails.budgets}
-    for transaction in transactions:
-        if transaction.budget:
-            used[transaction.budget.name] -= transaction.amount
+    used = {}
+    for budget in userdetails.budgets:
+        used[budget.name] = 0
+        for transaction in budget.transactions:
+            if period.start <= transaction.date < period.end:
+                used[transaction.budget.name] -= transaction.amount
 
     budgets = []
     for budget in userdetails.budgets:
-        budgets.append(BudgetT(budget.name, used[budget.name], budget.amount))
+        budgets.append(Budget(budget.name, used[budget.name], budget.amount))
 
     return budgets
 

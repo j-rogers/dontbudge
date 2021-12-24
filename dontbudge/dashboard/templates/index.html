@@ -30,7 +30,7 @@
     <div class="row">
         <div class="col">
             <h1 class="text-center">Accounts</h1>
-            {% for account in accounts %}
+            {% for account, transactions in accounts %}
                 <div class="container py-3">
                     <div class="row border bg-light">
                         <div class="col">
@@ -44,7 +44,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    {% for transaction in account.transactions %}
+                    {% for transaction in transactions %}
                     <div class="row border">
                         <div class="col">
                             <p>{{ transaction.description }}</p>

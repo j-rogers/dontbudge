@@ -4,7 +4,7 @@ import hashlib
 from flask.helpers import make_response
 from dontbudge.auth.forms import RegisterForm, LoginForm
 from dontbudge.database import db
-from dontbudge.api.models import UserDetails, Period
+from dontbudge.api.models import Category, UserDetails
 from dontbudge.auth.models import User
 from dateutil.relativedelta import relativedelta
 from dontbudge.auth.jwt import create_token, token_required
