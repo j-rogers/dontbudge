@@ -3,7 +3,7 @@
 Contains the routes for the dashboard.
 
 TODO:
-    - I think I can get rid of the namedtuples stuff after adding backrefs to the models
+    - Replace render_templates with Response objects?
 
 Author: Josh Rogers (2021)
 """
@@ -44,7 +44,7 @@ def index(user: User) -> str:
     # Get account information
     accounts = []
     for account in userdetails.accounts:
-        account, transactions = utility.get_account_transactions(account)
+        transactions = utility.get_account_transactions(account)
         accounts.append((account, transactions))
 
     title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
@@ -118,7 +118,7 @@ def view_account(user: User, account_index: int) -> str:
     except ValueError:
         redirect('/')
 
-    account, transactions = utility.get_account_transactions(account)
+    transactions = utility.get_account_transactions(account)
 
     return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=transactions, logged_in=True)
 
@@ -233,7 +233,8 @@ def edit_transaction(user: User, transaction_index: int) -> str:
         if transaction.bill_id != transaction_form.bill.data:
             transaction.bill_id = transaction_form.bill.data
             bill = Bill.query.filter_by(id=transaction_form.bill.data).first()
-            bill.start = bill.start + utility.get_relative(bill.occurence)
+            if bill:
+                bill.start = bill.start + utility.get_relative(bill.occurence)
 
         # Commit the changes
         db.session.commit()
@@ -450,13 +451,7 @@ def view_bills(user):
 
     bills = []
     for bill in userdetails.bills:
-        bills.append(utility.Bill(
-            bill.name,
-            bill.amount,
-            bill.start,
-            switch[bill.occurence],
-            userdetails.bills.index(bill)
-        ))
+        bills.append((bill, switch[bill.occurence]))
 
     return render_template('bills.html', title='Bills', bills=bills, logged_in=True)
 
@@ -514,7 +509,7 @@ def delete_bill(user, bill_index):
 @token_required
 def view_categories(user):
     userdetails = user.userdetails
-    categories = utility.get_categories(userdetails)
+    categories = userdetails.categories
 
     return render_template('categories.html', title='Categories', categories=categories, logged_in=True)
 

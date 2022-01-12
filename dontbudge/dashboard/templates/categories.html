@@ -13,8 +13,8 @@
             <tr>
                 <th>{{ category.name }}</th>
                 <th>
-                    <a class="btn btn-primary" role="button" href="/category/edit/{{ category.category_index }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/category/delete/{{ category.category_index }}">Delete</a>
+                    <a class="btn btn-primary" role="button" href="/category/edit/{{ category.user.categories.index(category) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/category/delete/{{ category.user.categories.index(category) }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}

@@ -12,6 +12,7 @@
             <tr>
                 <th scope="col">Amount</th>
                 <th scope="col">Description</th>
+                <th scope="col">Category</th>
                 <th scope="col">Date</th>
             </tr>
         </thead>
@@ -24,10 +25,11 @@
                 <th class="text-danger">{{ transaction.amount }}</th>
                 {% endif %}
                 <th>{{ transaction.description }}</th>
+                <th>{{ transaction.category.name }}</th>
                 <th>{{ transaction.date.strftime('%d %B, %Y') }}</th>
                 <th>
-                    <a class="btn btn-primary" role="button" href="/transaction/edit/{{ transaction.transaction_index }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/transaction/delete/{{ transaction.transaction_index }}">Delete</a>
+                    <a class="btn btn-primary" role="button" href="/transaction/edit/{{ transaction.user.transactions.index(transaction) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/transaction/delete/{{ transaction.user.transactions.index(transaction) }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}

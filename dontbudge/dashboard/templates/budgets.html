@@ -11,18 +11,18 @@
             </tr>
         </thead>
         <tbody>
-            {% for budget in budgets %}
+            {% for budget, used in budgets %}
             <tr>
                 <th>{{ budget.name }}</th>
-                {% if budget.used < budget.amount %}
-                <th class="text-success">{{ budget.used }}</th>
+                {% if used < budget.amount %}
+                <th class="text-success">{{ used }}</th>
                 {% else %}
-                <th class="text-danger">{{ budget.used }}</th>
+                <th class="text-danger">{{ used }}</th>
                 {% endif %}
                 <th>{{ budget.amount }}</th>
                 <th>
-                    <a class="btn btn-primary" role="button" href="/budget/edit/{{ budgets.index(budget) }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/budget/delete/{{ budgets.index(budget) }}">Delete</a>
+                    <a class="btn btn-primary" role="button" href="/budget/edit/{{ budget.user.budgets.index(budget) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/budget/delete/{{ budget.user.budgets.index(budget) }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}

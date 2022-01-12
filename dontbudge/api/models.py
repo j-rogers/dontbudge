@@ -1,6 +1,6 @@
 from decimal import Decimal
 from datetime import date
-from sqlalchemy.orm import relation, relationship
+from sqlalchemy.orm import relationship
 from dontbudge.database import db
 
 class Bill(db.Model):
