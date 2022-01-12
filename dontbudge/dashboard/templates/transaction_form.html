@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="w-75 position-absolute top-50 start-50 translate-middle" style="max-width: 800px;">
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.type }}
+        <div class="container">
+            <div class="row">
+                <div class="col-8">
+                    <div class="form-floating mb-3">
+                        {{ form.description(class_="form-control", placeholder_="description") }}
+                        {{ form.description.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ form.amount(class_="form-control", placeholder_="amount") }}
+                        {{ form.amount.label(class_="form-label") }}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ form.account(class_="form-control", placeholder_="account") }}
+                        {{ form.account.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ form.date(class_="form-control", placeholder_="date") }}
+                        {{ form.date.label(class_="form-label") }}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ form.category(class_="form-control", placeholder_="bill") }}
+                        {{ form.category.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ form.budget(class_="form-control", placeholder_="budget") }}
+                        {{ form.budget.label(class_="form-label") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        {{ form.bill(class_="form-control", placeholder_="bill") }}
+                        {{ form.bill.label(class_="form-label") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mb-3">
+            {{ form.submit(class_="btn btn-primary text-center") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

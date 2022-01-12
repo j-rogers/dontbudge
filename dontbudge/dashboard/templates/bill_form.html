@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="w-75 position-absolute top-50 start-50 translate-middle" style="max-width: 800px;">
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-floating mb-3">
+            {{ form.name(class_="form-control", placeholder_="name") }}
+            {{ form.name.label(class_="form-label") }}
+        </div>
+        <div class="form-floating mb-3">
+            {{ form.start(class_="form-control", placeholder_="start") }}
+            {{ form.start.label(class_="form-label") }}
+        </div>
+        <div class="form-floating mb-3">
+            {{ form.amount(class_="form-control", placeholder_="amount") }}
+            {{ form.amount.label(class_="form-label") }}
+        </div>
+        <div class="form-floating mb-3">
+            {{ form.occurence(class_="form-control", placeholder_="occurence") }}
+            {{ form.occurence.label(class_="form-label") }}
+        </div>
+        <div class="text-center mb-3">
+            {{ form.submit(class_="btn btn-primary text-center") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

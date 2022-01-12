@@ -76,7 +76,7 @@ def create_account(user: User) -> str:
         db.session.commit()
         return redirect('/')
 
-    return render_template('create_account.html', title='New Account', new_account_form=new_account_form, logged_in=True)
+    return render_template('account_form.html', title='New Account', form=new_account_form, logged_in=True)
 
 @dashboard.route('/account/view')
 @token_required
@@ -147,7 +147,7 @@ def edit_account(user, account_index):
     form.name.data = account.name
     form.starting_balance.data = account.balance
 
-    return render_template('create_account.html', title='Edit Account', new_account_form=form, logged_in=True)
+    return render_template('account_form.html', title='Edit Account', form=form, logged_in=True)
 
 @dashboard.route('/account/delete/<account_index>', methods=['GET', 'POST'])
 @token_required
@@ -258,7 +258,7 @@ def edit_transaction(user: User, transaction_index: int) -> str:
     if category:
         transaction_form.category.choices.insert(0, (transaction.category_id, Category.query.filter_by(id=transaction.category_id).first().name))
 
-    return render_template('create_transaction.html', title='Edit Transaction', transaction_form=transaction_form, logged_in=True)
+    return render_template('transaction_form.html', title='Edit Transaction', form=transaction_form, logged_in=True)
 
 @dashboard.route('/transaction/create/<type>', methods=['GET', 'POST'])
 @token_required
@@ -325,7 +325,7 @@ def create_transaction(user: User, type: str) -> str:
 
             return redirect('/')
 
-    return render_template('create_transaction.html', title=type.capitalize(), transaction_form=transaction_form, logged_in=True)
+    return render_template('transaction_form.html', title=type.capitalize(), form=transaction_form, logged_in=True)
 
 @dashboard.route('/transaction/delete/<transaction_index>', methods=['GET', 'POST'])
 @token_required
@@ -434,7 +434,7 @@ def create_bill(user: User) -> str:
 
         return redirect('/')
 
-    return render_template('create_bill.html', title='Create Bill', bill_form=bill_form, logged_in=True)
+    return render_template('bill_form.html', title='Create Bill', form=bill_form, logged_in=True)
 
 @dashboard.route('/bill/view')
 @token_required
@@ -486,7 +486,7 @@ def edit_bill(user, bill_index):
     bill_form.start.data = bill.start
     bill_form.occurence.data = bill.occurence
     bill_form.amount.data = bill.amount
-    return render_template('create_bill.html', title='Edit Bill', bill_form=bill_form, logged_in=True)
+    return render_template('bill_form.html', title='Edit Bill', form=bill_form, logged_in=True)
 
 @dashboard.route('/bill/delete/<bill_index>', methods=['GET', 'POST'])
 @token_required
@@ -532,7 +532,7 @@ def edit_category(user, category_index):
 
     category_form.name.data = category.name
 
-    return render_template('create_category.html', title='Edit Category', category_form=category_form, logged_in=True)
+    return render_template('category_form.html', title='Edit Category', form=category_form, logged_in=True)
 
 @dashboard.route('/category/create', methods=['GET', 'POST'])
 @token_required
@@ -546,7 +546,7 @@ def create_category(user):
         db.session.commit()
         return redirect('/')
 
-    return render_template('create_category.html', title='Create Category', category_form=category_form, logged_in=True)
+    return render_template('category_form.html', title='Create Category', form=category_form, logged_in=True)
 
 @dashboard.route('/category/delete/<category_index>', methods=['GET', 'POST'])
 @token_required
@@ -586,7 +586,7 @@ def create_budget(user):
 
         return redirect('/')
 
-    return render_template('create_budget.html', title='Create Budget', budget_form=budget_form, logged_in=True)
+    return render_template('budget_form.html', title='Create Budget', form=budget_form, logged_in=True)
 
 @dashboard.route('/budget/edit/<budget_index>')
 @token_required
@@ -613,7 +613,7 @@ def edit_budget(user, budget_index):
     form.name.data = budget.name
     form.amount.data = budget.amount
 
-    return render_template('create_budget.html', title='Edit Budget', budget_form=form, logged_in=True)
+    return render_template('budget_form.html', title='Edit Budget', form=form, logged_in=True)
 
 @dashboard.route('/budget/delete/<budget_index>', methods=['GET', 'POST'])
 @token_required
