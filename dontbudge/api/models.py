@@ -69,10 +69,10 @@ class Transaction(db.Model):
 class Account(db.Model):
     __tablename__ = 'accounts'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('userdetails.id', ondelete='CASCADE'))
     name = db.Column(db.String(100))
     balance = db.Column(db.Numeric(scale=2))
-    transactions = relationship('Transaction', backref='account')
+    transactions = relationship('Transaction', backref='account', cascade='delete')
 
     def __init__(self, name: str, balance: Decimal, user_id: id):
         self.name = name
@@ -87,11 +87,11 @@ class UserDetails(db.Model):
     range = db.Column(db.String(4))
     period_start = db.Column(db.DateTime)
     period_end = db.Column(db.DateTime)
-    accounts = relationship('Account', backref='user')
-    bills = relationship('Bill', backref='user')
-    categories = relationship('Category', backref='user')
-    budgets = relationship('Budget', backref='user')
-    transactions = relationship('Transaction', backref='user')
+    accounts = relationship('Account', backref='user', cascade='delete')
+    bills = relationship('Bill', backref='user', cascade='delete')
+    categories = relationship('Category', backref='user', cascade='delete')
+    budgets = relationship('Budget', backref='user', cascade='delete')
+    transactions = relationship('Transaction', backref='user', cascade='delete')
 
     def __init__(self, name: str, user_id: int, range: str, period_start: date, period_end: date):
         self.name = name

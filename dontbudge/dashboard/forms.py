@@ -73,3 +73,7 @@ class BudgetForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Submit')
+
+class DeleteForm(FlaskForm):
+    """Form for deleting an Object"""
+    submit = SubmitField('Yes')

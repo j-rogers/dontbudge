@@ -21,7 +21,8 @@
                 {% endif %}
                 <th>{{ budget.amount }}</th>
                 <th>
-                    <a class="btn btn-light" role="button" href="/budget/edit/{{ budgets.index(budget) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/budget/edit/{{ budgets.index(budget) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/budget/delete/{{ budgets.index(budget) }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}

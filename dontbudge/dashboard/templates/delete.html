@@ -1,0 +1,14 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<div class="w-75 position-absolute top-50 start-50 translate-middle" style="max-width: 800px;">
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <div class="text-center mb-3">
+            <h3>Are you sure you want to delete {{ object }}? Any links to it will also be deleted.</h3>
+            {{ form.submit(class_="btn btn-primary text-center") }}
+            <a class="btn btn-primary" role="button" href="/">No</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@
 Contains the routes for the dashboard.
 
 TODO:
-    - Be able to delete stuff (transactions/bills/etc)
+    - I think I can get rid of the namedtuples stuff after adding backrefs to the models
 
 Author: Josh Rogers (2021)
 """
@@ -148,6 +148,23 @@ def edit_account(user, account_index):
     form.starting_balance.data = account.balance
 
     return render_template('create_account.html', title='Edit Account', new_account_form=form, logged_in=True)
+
+@dashboard.route('/account/delete/<account_index>', methods=['GET', 'POST'])
+@token_required
+def delete_account(user, account_index):
+    userdetails = user.userdetails
+    form = forms.DeleteForm()
+    try:
+        account = userdetails.accounts[int(account_index)]
+    except ValueError:
+        return 'Account not found'
+
+    if form.validate_on_submit():
+        db.session.delete(account)
+        db.session.commit()
+        return redirect('/account/view')
+
+    return render_template('delete.html', title=f'Delete Account { account.name }', form=form, object=account.name, logged_in=True)
 
 @dashboard.route('/transaction/edit/<transaction_index>', methods=['GET', 'POST'])
 @token_required
@@ -309,6 +326,28 @@ def create_transaction(user: User, type: str) -> str:
 
     return render_template('create_transaction.html', title=type.capitalize(), transaction_form=transaction_form, logged_in=True)
 
+@dashboard.route('/transaction/delete/<transaction_index>', methods=['GET', 'POST'])
+@token_required
+def delete_transaction(user, transaction_index):
+    userdetails = user.userdetails
+    form = forms.DeleteForm()
+    try:
+        transaction = userdetails.transactions[int(transaction_index)]
+    except ValueError:
+        return 'Transaction not found'
+
+    if form.validate_on_submit():
+        # Adjust account balance first
+        transaction.account.balance -= transaction.amount
+
+        # Delete transaction and commit
+        db.session.delete(transaction)
+        db.session.commit()
+
+        return redirect('/period/view')
+
+    return render_template('delete.html', title=f'Delete Transaction { transaction.description }', form=form, object=transaction.description, logged_in=True)
+
 @dashboard.route('/period/view')
 @token_required
 def view_transactions(user: User) -> Response:
@@ -454,6 +493,23 @@ def edit_bill(user, bill_index):
     bill_form.amount.data = bill.amount
     return render_template('create_bill.html', title='Edit Bill', bill_form=bill_form, logged_in=True)
 
+@dashboard.route('/bill/delete/<bill_index>', methods=['GET', 'POST'])
+@token_required
+def delete_bill(user, bill_index):
+    userdetails = user.userdetails
+    form = forms.DeleteForm()
+    try:
+        bill = userdetails.bills[int(bill_index)]
+    except ValueError:
+        return 'Bill not found'
+
+    if form.validate_on_submit():
+        db.session.delete(bill)
+        db.session.commit()
+        return redirect('/bill/view')
+
+    return render_template('delete.html', title=f'Delete Bill { bill.name }', form=form, object=bill.name, logged_in=True)
+
 @dashboard.route('/category/view')
 @token_required
 def view_categories(user):
@@ -496,6 +552,23 @@ def create_category(user):
         return redirect('/')
 
     return render_template('create_category.html', title='Create Category', category_form=category_form, logged_in=True)
+
+@dashboard.route('/category/delete/<category_index>', methods=['GET', 'POST'])
+@token_required
+def delete_category(user, category_index):
+    userdetails = user.userdetails
+    form = forms.DeleteForm()
+    try:
+        category = userdetails.categories[int(category_index)]
+    except ValueError:
+        return 'Category not found'
+
+    if form.validate_on_submit():
+        db.session.delete(category)
+        db.session.commit()
+        return redirect('/category/view')
+
+    return render_template('delete.html', title=f'Delete Category { category.name }', form=form, object=category.name, logged_in=True)
 
 @dashboard.route('/budget/view')
 @token_required
@@ -547,6 +620,22 @@ def edit_budget(user, budget_index):
 
     return render_template('create_budget.html', title='Edit Budget', budget_form=form, logged_in=True)
 
+@dashboard.route('/budget/delete/<budget_index>', methods=['GET', 'POST'])
+@token_required
+def delete_budget(user, budget_index):
+    userdetails = user.userdetails
+    form = forms.DeleteForm()
+    try:
+        budget = userdetails.budgets[int(budget_index)]
+    except ValueError:
+        return 'Budget not found'
+
+    if form.validate_on_submit():
+        db.session.delete(budget)
+        db.session.commit()
+        return redirect('/budget/view')
+
+    return render_template('delete.html', title=f'Delete Budget { budget.name }', form=form, object=budget.name, logged_in=True)
 
 @dashboard.route('/settings', methods=['GET', 'POST'])
 @token_required

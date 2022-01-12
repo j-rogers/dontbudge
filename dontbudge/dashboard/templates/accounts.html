@@ -19,7 +19,8 @@
                 <th class="text-danger">{{ account.balance }}</th>
                 {% endif %}
                 <th>
-                    <a class="btn btn-light" role="button" href="/account/edit/{{ accounts.index(account) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/account/edit/{{ accounts.index(account) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/account/delete/{{ accounts.index(account) }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}

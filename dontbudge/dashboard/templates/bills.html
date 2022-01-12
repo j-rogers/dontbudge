@@ -19,7 +19,8 @@
                 <th>{{ bill.start.strftime('%d %B, %Y') }}</th>
                 <th>{{ bill.occurence }}</th>
                 <th>
-                    <a class="btn btn-light" role="button" href="/bill/edit/{{ bill.bill_index }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/bill/edit/{{ bill.bill_index }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/bill/delete/{{ bill.bill_index }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}
