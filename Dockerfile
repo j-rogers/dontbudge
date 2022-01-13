@@ -8,4 +8,4 @@ COPY . /dontbudge
 
 EXPOSE 9876
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:9876", "run:app"]
+ENTRYPOINT ["sh", "entrypoint.sh"]
