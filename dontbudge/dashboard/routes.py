@@ -116,7 +116,9 @@ def view_account(user: User, account_index: int) -> str:
     try:
         account = userdetails.accounts[int(account_index)]
     except ValueError:
-        redirect('/')
+        return redirect('/')
+    except IndexError:
+        return redirect('/')
 
     transactions = utility.get_account_transactions(account)
 
@@ -129,7 +131,9 @@ def edit_account(user, account_index):
     try:
         account = userdetails.accounts[int(account_index)]
     except ValueError:
-        redirect('/')
+        return redirect('/')
+    except IndexError:
+        return redirect('/')
     form = forms.AccountForm()
 
     if form.validate_on_submit():
@@ -158,6 +162,8 @@ def delete_account(user, account_index):
         account = userdetails.accounts[int(account_index)]
     except ValueError:
         return 'Account not found'
+    except IndexError:
+        return 'Account not found'
 
     if form.validate_on_submit():
         db.session.delete(account)
@@ -185,8 +191,10 @@ def edit_transaction(user: User, transaction_index: int) -> str:
     userdetails = user.userdetails
     try:
         transaction = userdetails.transactions[int(transaction_index)]
-    except:
-        redirect('/')
+    except ValueError:
+        return redirect('/')
+    except IndexError:
+        return redirect('/')
     
     # Create form
     transaction_form = forms.TransactionForm()
@@ -336,6 +344,8 @@ def delete_transaction(user, transaction_index):
         transaction = userdetails.transactions[int(transaction_index)]
     except ValueError:
         return 'Transaction not found'
+    except IndexError:
+        return 'Transaction not found'
 
     if form.validate_on_submit():
         # Adjust account balance first
@@ -388,6 +398,8 @@ def view_period(user: User, period_index: int) -> str:
         period = periods[int(period_index)]
     except ValueError:
         return redirect('/')
+    except IndexError:
+        return render_template('period.html', title="No transactions", transactions=[], logged_in=True)
     transactions = utility.get_transactions(userdetails)
 
     # Get transactions in this period
@@ -398,12 +410,12 @@ def view_period(user: User, period_index: int) -> str:
 
     title = f'Current Period: {period.start.strftime("%d %B, %Y")} - {period.end.strftime("%d %B, %Y")}'
     menu_items = [
-        utility.Menu('Other Periods', [
+        utility.Menu('Select Period', reversed([
             utility.MenuItem(f'{p.start.strftime("%d %B, %Y")} - {p.end.strftime("%d %B, %Y")}', f'/period/view/{periods.index(p)}') for p in periods
-        ])
+        ]))
     ]
 
-    return render_template('period.html', title=title, menu_items=menu_items, periods=periods, transactions=reversed(period_transactions), period_start=period.start, period_end=period.end, logged_in=True)
+    return render_template('period.html', title=title, menu_items=menu_items, transactions=reversed(period_transactions), logged_in=True)
 
 @dashboard.route('/bill/create', methods=['GET', 'POST'])
 @token_required
@@ -462,7 +474,9 @@ def edit_bill(user, bill_index):
     try:
         bill = userdetails.bills[int(bill_index)]
     except ValueError:
-        redirect ('/')
+        return redirect ('/')
+    except IndexError:
+        return redirect('/')
     bill_form = forms.BillForm()
 
     if bill_form.validate_on_submit():
@@ -497,6 +511,8 @@ def delete_bill(user, bill_index):
         bill = userdetails.bills[int(bill_index)]
     except ValueError:
         return 'Bill not found'
+    except IndexError:
+        return 'Bill not found'
 
     if form.validate_on_submit():
         db.session.delete(bill)
@@ -521,7 +537,9 @@ def edit_category(user, category_index):
     try:
         category = userdetails.categories[int(category_index)]
     except ValueError:
-        redirect('/')
+        return redirect('/')
+    except IndexError:
+        return redirect('/')
 
     if category_form.validate_on_submit():
         if category.name != category_form.name.data:
@@ -556,6 +574,8 @@ def delete_category(user, category_index):
     try:
         category = userdetails.categories[int(category_index)]
     except ValueError:
+        return 'Category not found'
+    except IndexError:
         return 'Category not found'
 
     if form.validate_on_submit():
@@ -595,7 +615,9 @@ def edit_budget(user, budget_index):
     try:
         budget = userdetails.budgets[int(budget_index)]
     except ValueError:
-        redirect('/')
+        return redirect('/')
+    except IndexError:
+        return redirect('/')
     form = forms.BudgetForm()
 
     if form.validate_on_submit():
@@ -623,6 +645,8 @@ def delete_budget(user, budget_index):
     try:
         budget = userdetails.budgets[int(budget_index)]
     except ValueError:
+        return 'Budget not found'
+    except IndexError:
         return 'Budget not found'
 
     if form.validate_on_submit():
