@@ -2,9 +2,6 @@
 
 Contains the routes for the dashboard.
 
-TODO:
-    - Replace render_templates with Response objects?
-
 Author: Josh Rogers (2021)
 """
 from flask import request, redirect, render_template

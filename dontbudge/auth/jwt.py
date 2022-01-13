@@ -14,15 +14,15 @@ def token_required(f):
             pass
 
         if not token:
-            return redirect('/login', code=401)
+            return redirect('/login')
         try:
             data = jwt.decode(token, dontbudge.SECRET, algorithms=['HS256'])
             user = User.query.filter_by(id=data['id']).first()
         except:
-            return redirect('/login', code=401)
+            return redirect('/login')
 
         if not user:
-            return redirect('/login', code=401)
+            return redirect('/login')
  
         return f(user, *args, **kwargs)
     return decorator
