@@ -2,3 +2,4 @@
 **/__pycache__
 dontbudge.sqlite3
 .vscode
+docker-compose.yml
