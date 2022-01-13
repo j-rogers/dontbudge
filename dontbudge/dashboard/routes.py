@@ -121,7 +121,7 @@ def view_account(user: User, account_index: int) -> str:
 
     return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=transactions, logged_in=True)
 
-@dashboard.route('/account/edit/<account_index>')
+@dashboard.route('/account/edit/<account_index>', methods=['GET', 'POST'])
 @token_required
 def edit_account(user, account_index):
     userdetails = user.userdetails
