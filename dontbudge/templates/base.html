@@ -100,6 +100,18 @@
                 {% endif %}
             </div>
         </nav>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="w-75 position-absolute start-50 translate-middle" style="max-width: 400px;">
+                    <div class="alert alert-danger" role="alert">
+                        {{ message }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 {% endblock %}
 
 {% block content %}
