@@ -4,6 +4,7 @@ Contains the routes for the dashboard.
 
 Author: Josh Rogers (2021)
 """
+from datetime import datetime
 from flask import request, redirect, render_template
 from werkzeug.wrappers.response import Response
 from dontbudge.database import db
@@ -329,6 +330,8 @@ def create_transaction(user: User, type: str) -> str:
             db.session.commit()
 
             return redirect('/')
+
+    transaction_form.date.data = datetime.today()
 
     return render_template('transaction_form.html', title=type.capitalize(), form=transaction_form, logged_in=True)
 
