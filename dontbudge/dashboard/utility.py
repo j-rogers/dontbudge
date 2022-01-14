@@ -55,7 +55,7 @@ def get_account_transactions(account):
         transactions.append(transaction)
 
     transactions.sort(key = lambda transaction: transaction.date)
-    return reversed(transactions)
+    return transactions
 
 def get_periods(userdetails):
     range = get_relative(userdetails.range)

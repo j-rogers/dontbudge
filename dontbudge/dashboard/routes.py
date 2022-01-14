@@ -42,8 +42,8 @@ def index(user: User) -> str:
     # Get account information
     accounts = []
     for account in userdetails.accounts:
-        transactions = utility.get_account_transactions(account)
-        accounts.append((account, transactions))
+        transactions = utility.get_account_transactions(account)[-5:]
+        accounts.append((account, reversed(transactions)))
 
     title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
@@ -120,7 +120,7 @@ def view_account(user: User, account_index: int) -> str:
 
     transactions = utility.get_account_transactions(account)
 
-    return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=transactions, logged_in=True)
+    return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=reversed(transactions), logged_in=True)
 
 @dashboard.route('/account/edit/<account_index>', methods=['GET', 'POST'])
 @token_required
