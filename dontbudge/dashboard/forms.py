@@ -39,7 +39,7 @@ class BillForm(FlaskForm):
             ('1W', 'Weekly'),
             ('2W', 'Fortnightly'),
             ('1M', 'Monthly'),
-            ('1Q', 'Quartely'),
+            ('1Q', 'Quarterly'),
             ('1Y', 'Annualy')
         ],
         validators = [DataRequired()]
