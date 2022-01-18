@@ -228,7 +228,7 @@ def edit_transaction(user: User, transaction_index: int) -> str:
             transaction.category_id = transaction_form.category.data
 
         # Budget
-        if transaction.budget_id != transaction_form.category.data:
+        if transaction.budget_id != transaction_form.budget.data:
             transaction.budget_id = transaction_form.budget.data
 
         # Date
