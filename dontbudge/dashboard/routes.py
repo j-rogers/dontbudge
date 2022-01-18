@@ -608,7 +608,7 @@ def create_budget(user):
 
     return render_template('budget_form.html', title='Create Budget', form=budget_form, logged_in=True)
 
-@dashboard.route('/budget/edit/<budget_index>')
+@dashboard.route('/budget/edit/<budget_index>', methods=['GET', 'POST'])
 @token_required
 def edit_budget(user, budget_index):
     userdetails = user.userdetails
