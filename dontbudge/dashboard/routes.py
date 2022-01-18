@@ -144,6 +144,7 @@ def edit_account(user, account_index):
             account.balance = form.starting_balance.data
 
         db.session.commit()
+        return redirect('/')
 
     # Defaults
     form.name.data = account.name
