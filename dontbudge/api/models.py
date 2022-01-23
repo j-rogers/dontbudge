@@ -74,9 +74,8 @@ class Account(db.Model):
     balance = db.Column(db.Numeric(scale=2))
     transactions = relationship('Transaction', backref='account', cascade='delete')
 
-    def __init__(self, name: str, balance: Decimal, user_id: id):
+    def __init__(self, name: str, user_id: id):
         self.name = name
-        self.balance = balance
         self.user_id = user_id
 
 class UserDetails(db.Model):

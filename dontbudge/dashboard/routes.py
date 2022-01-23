@@ -2,9 +2,12 @@
 
 Contains the routes for the dashboard.
 
+TODO:
+    - Remove balance editing from account edit form
+
 Author: Josh Rogers (2021)
 """
-from datetime import datetime
+from datetime import datetime, date
 from flask import request, redirect, render_template
 from werkzeug.wrappers.response import Response
 from dontbudge.database import db
@@ -28,7 +31,12 @@ def index(user: User) -> str:
         A rendered index.html template
     """
     userdetails = user.userdetails
-    utility.update(userdetails)
+    
+    # Update period if needed
+    if date.today() >= userdetails.period_end.date():
+        userdetails.period_start = userdetails.period_end
+        userdetails.period_end += utility.get_relative(userdetails.range)
+        db.session.commit()
 
     # Check what bills will be due in the current period
     active_bills = []
@@ -43,7 +51,8 @@ def index(user: User) -> str:
     accounts = []
     for account in userdetails.accounts:
         transactions = utility.get_account_transactions(account)[-5:]
-        accounts.append((account, reversed(transactions)))
+        balance = utility.get_account_balance(account)
+        accounts.append((account, balance, reversed(transactions)))
 
     title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
@@ -68,9 +77,11 @@ def create_account(user: User) -> str:
 
     if new_account_form.validate_on_submit():
         name = new_account_form.name.data
-        starting_balance = new_account_form.starting_balance.data
-        account = Account(name, starting_balance, userdetails.id)
+        account = Account(name, userdetails.id)
         db.session.add(account)
+        db.session.commit()
+        initial_balance = Transaction(userdetails.id, account.id, f'{name} Initial Balance', date.today(), new_account_form.starting_balance.data)
+        db.session.add(initial_balance)
         db.session.commit()
         return redirect('/')
 
@@ -91,7 +102,11 @@ def view_accounts(user: User) -> str:
         Rendered accounts.html template
     """
     userdetails = user.userdetails
-    accounts = userdetails.accounts
+    accounts = []
+    for account in userdetails.accounts:
+        balance = utility.get_account_balance(account)
+        accounts.append((account, balance))
+
     return render_template('accounts.html', title='Accounts', accounts=accounts, logged_in=True)
 
 @dashboard.route('/account/view/<account_index>')
@@ -139,16 +154,12 @@ def edit_account(user, account_index):
         if account.name != form.name.data:
             account.name = form.name.data
 
-        # Balance
-        if account.balance != form.starting_balance.data:
-            account.balance = form.starting_balance.data
-
         db.session.commit()
         return redirect('/')
 
     # Defaults
     form.name.data = account.name
-    form.starting_balance.data = account.balance
+    form.starting_balance.data = 0
 
     return render_template('account_form.html', title='Edit Account', form=form, logged_in=True)
 
@@ -196,7 +207,7 @@ def edit_transaction(user: User, transaction_index: int) -> str:
         return redirect('/')
     
     # Create form
-    transaction_form = forms.TransactionForm()
+    transaction_form = forms.TransactionForm(account=transaction.account.id)
     transaction_form.account.choices = [(account.id, account.name) for account in userdetails.accounts]
     transaction_form.bill.choices = [(bill.id, bill.name) for bill in userdetails.bills]
     transaction_form.bill.choices.insert(0, (None, 'None'))
@@ -214,15 +225,10 @@ def edit_transaction(user: User, transaction_index: int) -> str:
         # Account
         if transaction.account_id != transaction_form.account.data:
             transaction.account_id = transaction_form.account.data
-            transaction.account.balance -= transaction.amount
-            new_account = Account.query.filter_by(id=transaction_form.account.data).first()
-            new_account.balance += transaction.amount
 
         # Amount
         if transaction.amount != transaction_form.amount.data:
-            transaction.account.balance += transaction.amount if transaction_form.type.data == 'withdraw' else transaction.amount * -1
             transaction.amount = transaction_form.amount.data if transaction_form.type.data == 'deposit' else transaction_form.amount.data * -1
-            transaction.account.balance += transaction.amount
 
         # Category
         if transaction.category_id != transaction_form.category.data:
@@ -250,20 +256,19 @@ def edit_transaction(user: User, transaction_index: int) -> str:
 
     # Fill in existing details
     transaction_form.description.data = transaction.description
-    transaction_form.account.data = transaction.account_id
     transaction_form.amount.data = transaction.amount if transaction.amount > 0 else transaction.amount * -1
     transaction_form.date.data = transaction.date
     transaction_form.type.data = 'deposit' if transaction.amount >= 0 else 'withdraw'
 
-    bill = Bill.query.filter_by(id=transaction.bill_id).first()
-    budget = Budget.query.filter_by(id=transaction.budget_id).first()
-    category = Category.query.filter_by(id=transaction.category_id).first()
+    bill = transaction.bill
+    budget = transaction.budget
+    category = transaction.category
     if bill:
-        transaction_form.bill.choices.insert(0, (transaction.bill_id, Bill.query.filter_by(id=transaction.bill_id).first().name))
+        transaction_form.bill.choices.insert(0, (bill.id, bill.name))
     if budget:
-        transaction_form.budget.choices.insert(0, (transaction.budget_id, Budget.query.filter_by(id=transaction.budget_id).first().name))
+        transaction_form.budget.choices.insert(0, (budget.id, budget.name))
     if category:
-        transaction_form.category.choices.insert(0, (transaction.category_id, Category.query.filter_by(id=transaction.category_id).first().name))
+        transaction_form.category.choices.insert(0, (category.id, category.name))
 
     return render_template('transaction_form.html', title='Edit Transaction', form=transaction_form, logged_in=True)
 
@@ -315,12 +320,8 @@ def create_transaction(user: User, type: str) -> str:
             transaction = None
             if type == 'withdraw':
                 transaction = Transaction(userdetails.id, account_id, description, date, amount * -1, bill_id, category_id, budget_id)
-                account = Account.query.filter_by(id=account_id).first()
-                account.balance -= amount
             elif type == 'deposit':
                 transaction = Transaction(userdetails.id, account_id, description, date, amount, bill_id, category_id, budget_id)
-                account = Account.query.filter_by(id=account_id).first()
-                account.balance += amount
 
             # Update next bill occurence since this one has been paid
             bill = Bill.query.filter_by(id=bill_id).first()
@@ -349,9 +350,6 @@ def delete_transaction(user, transaction_index):
         return 'Transaction not found'
 
     if form.validate_on_submit():
-        # Adjust account balance first
-        transaction.account.balance -= transaction.amount
-
         # Delete transaction and commit
         db.session.delete(transaction)
         db.session.commit()

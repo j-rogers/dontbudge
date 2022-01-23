@@ -10,17 +10,17 @@
             </tr>
         </thead>
         <tbody>
-            {% for account in accounts %}
+            {% for account, balance in accounts %}
             <tr>
-                <th><a href="/account/view/{{ accounts.index(account) }}">{{ account.name }}</a></th>
-                {% if account.balance >= 0 %}
-                <th class="text-success">{{ account.balance }}</th>
+                <th><a href="/account/view/{{ account.user.accounts.index(account) }}">{{ account.name }}</a></th>
+                {% if balance >= 0 %}
+                <th class="text-success">{{ balance }}</th>
                 {% else %}
-                <th class="text-danger">{{ account.balance }}</th>
+                <th class="text-danger">{{ balance }}</th>
                 {% endif %}
                 <th>
-                    <a class="btn btn-primary" role="button" href="/account/edit/{{ accounts.index(account) }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/account/delete/{{ accounts.index(account) }}">Delete</a>
+                    <a class="btn btn-primary" role="button" href="/account/edit/{{ account.user.accounts.index(account) }}">Edit</a>
+                    <a class="btn btn-primary" role="button" href="/account/delete/{{ account.user.accounts.index(account) }}">Delete</a>
                 </th>
             </tr>
             {% endfor %}

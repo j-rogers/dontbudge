@@ -30,17 +30,17 @@
     <div class="row">
         <div class="col">
             <h1 class="text-center">Accounts</h1>
-            {% for account, transactions in accounts %}
+            {% for account, balance, transactions in accounts %}
                 <div class="container py-3">
                     <div class="row border bg-light">
                         <div class="col">
                             <h4 class="text-primary">{{ account.name }}</h4>
                         </div>
                         <div class="col text-end">
-                            {% if account.balance >= 0 %}
-                            <h4 class="text-success">${{ account.balance }}</h4>
+                            {% if balance >= 0 %}
+                            <h4 class="text-success">${{ balance }}</h4>
                             {% else %}
-                            <h4 class="text-danger">${{ account.balance }}</h4>
+                            <h4 class="text-danger">${{ balance }}</h4>
                             {% endif %}
                         </div>
                     </div>

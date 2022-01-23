@@ -2,6 +2,7 @@ from collections import namedtuple
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from dontbudge.database import db
+from dontbudge.api.models import Transaction
 
 Period = namedtuple('Period', [
     'start',
@@ -89,15 +90,9 @@ def get_budgets(userdetails):
 
             yield budget, used
 
-def update(userdetails):
-    # Modify current period if needed
-    if date.today() >= userdetails.period_end.date():
-        userdetails.period_start = userdetails.period_end
-        userdetails.period_end += get_relative(userdetails.range)
-        db.session.commit()
+def get_account_balance(account):
+    balance = 0
+    for transaction in account.transactions:
+        balance += transaction.amount
 
-    # Update bill next occurences
-    for bill in userdetails.bills:
-        if bill.start <= userdetails.period_start:
-            bill.start += get_relative(userdetails.range)
-            db.session.commit()
+    return balance
