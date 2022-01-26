@@ -8,7 +8,7 @@ TODO:
 Author: Josh Rogers (2021)
 """
 from datetime import datetime, date
-from flask import request, redirect, render_template
+from flask import request, redirect, render_template, flash
 from werkzeug.wrappers.response import Response
 from dontbudge.database import db
 from dontbudge.dashboard import dashboard, forms, utility
@@ -315,6 +315,11 @@ def create_transaction(user: User, type: str) -> str:
             bill_id = transaction_form.bill.data
             category_id = transaction_form.category.data
             budget_id = transaction_form.budget.data
+
+            if account_id == 'None':
+                flash('Please select an account.')
+                transaction_form.date.data = datetime.today()
+                return render_template('transaction_form.html', title=type.capitalize(), form=transaction_form, logged_in=True)
 
             # Create the Transaction and take/add the amount from the specified account
             transaction = None
