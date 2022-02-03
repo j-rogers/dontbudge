@@ -2,10 +2,7 @@
 
 Contains the routes for the dashboard.
 
-TODO:
-    - Remove balance editing from account edit form
-
-Author: Josh Rogers (2021)
+Author: Josh Rogers (2022)
 """
 from datetime import datetime, date
 from flask import request, redirect, render_template, flash
@@ -161,7 +158,7 @@ def edit_account(user, account_index):
     form.name.data = account.name
     form.starting_balance.data = 0
 
-    return render_template('account_form.html', title='Edit Account', form=form, logged_in=True)
+    return render_template('account_edit_form.html', title='Edit Account', form=form, logged_in=True)
 
 @dashboard.route('/account/delete/<account_index>', methods=['GET', 'POST'])
 @token_required
@@ -690,3 +687,14 @@ def settings(user):
     settings_form.period_start.data = userdetails.period_start
 
     return render_template('settings.html', title="Settings", settings_form=settings_form, logged_in=True)
+
+@dashboard.route('/settings/delete', methods=['GET', 'POST'])
+@token_required
+def delete(user):
+    form = forms.DeleteForm()
+    if form.validate_on_submit():
+        db.session.delete(user)
+        db.session.commit()
+        return redirect('/logout')
+
+    return render_template('delete.html', title=f'Delete Account {user.username}', form=form, object='your account', logged_in=True)
