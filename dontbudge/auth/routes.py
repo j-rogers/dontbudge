@@ -17,7 +17,7 @@ def register():
     if request.method == 'POST':
         if form.validate_on_submit():
             # Check user doesn't exist
-            username = form.username.data
+            username = form.username.data.lower()
             if User.query.filter_by(username=username).first():
                 flash('User already exists.')
                 return redirect('/register')
@@ -45,7 +45,7 @@ def login():
     if request.method == 'POST':
         if form.validate_on_submit():
             # Check user exists
-            username = form.username.data
+            username = form.username.data.lower()
             if not User.query.filter_by(username=username).first():
                 flash('Incorrect username or password.')
                 return redirect('/login')
