@@ -63,7 +63,7 @@
         </div>
         <div class="col">
             <h1 class="text-center">Bills due this Period</h1>
-            <div class="container py-2"></div>
+            <div class="container py-2">
                 <div class="row border bg-light">
                     <div class="col">
                         <h4>Bill</h4>
@@ -91,5 +91,36 @@
             </div>
         </div>
     </div>
+    {% if previous_bills %}
+    <div class="row">
+        <h1 class="text-center">Previous Bills (Possibly Overdue)</h1>
+        <div class="container py-2"></div>
+            <div class="row border bg-light">
+                <div class="col">
+                    <h4>Bill</h4>
+                </div>
+                <div class="col">
+                    <h4>Amount</h4>
+                </div>
+                <div class="col">
+                    <h4>Due</h4>
+                </div>
+            </div>
+            {% for bill in previous_bills %}
+            <div class="row border">
+                <div class="col">
+                    <p>{{ bill.name }}</p>
+                </div>
+                <div class="col">
+                    <p>${{ bill.amount }}</p>
+                </div>
+                <div class="col">
+                    <p>{{ bill.start.strftime('%d %B, %Y') }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

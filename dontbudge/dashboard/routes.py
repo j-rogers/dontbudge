@@ -35,11 +35,14 @@ def index(user: User) -> str:
         userdetails.period_end += utility.get_relative(userdetails.range)
         db.session.commit()
 
-    # Check what bills will be due in the current period
+    # Check what bills will be due in the current period and previous
     active_bills = []
+    previous_bills = []
     for bill in userdetails.bills:
         if userdetails.period_start <= bill.start < userdetails.period_end:
             active_bills.append(bill)
+        elif bill.start < userdetails.period_start:
+            previous_bills.append(bill)
 
     # Get budgets
     budgets = utility.get_budgets(userdetails)
@@ -53,7 +56,7 @@ def index(user: User) -> str:
 
     title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
-    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, budgets=budgets, logged_in=True)
+    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, budgets=budgets, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
