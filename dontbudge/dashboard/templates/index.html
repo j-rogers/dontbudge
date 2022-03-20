@@ -78,7 +78,11 @@
                 {% for bill in bills %}
                 <div class="row border">
                     <div class="col">
+                        {% if bill in bills[:bills.index(bill)] %}
+                        <p>{{ bill.name }} x2</p>
+                        {% else %}
                         <p>{{ bill.name }}</p>
+                        {% endif %}
                     </div>
                     <div class="col">
                         <p>${{ bill.amount }}</p>
@@ -88,6 +92,15 @@
                     </div>
                 </div>
                 {% endfor %}
+                <div class="row border">
+                    <div class="col"></div>
+                    <div class="col">
+                        <p>Total</p>
+                    </div>
+                    <div class="col">
+                        ${{ total_bill_amount }}
+                    </div>
+                </div>
             </div>
         </div>
     </div>

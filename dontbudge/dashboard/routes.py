@@ -35,15 +35,23 @@ def index(user: User) -> str:
         userdetails.period_end += utility.get_relative(userdetails.range)
         db.session.commit()
 
-    # Check what bills will be due in the current period and previous
+    # Check what bills will be due in the current period and previous.
+    # The while loop finds bills that may occur more than once in the
+    # same period.
     active_bills = []
     previous_bills = []
+    total_bill_amount = 0
     for bill in userdetails.bills:
-        if userdetails.period_start <= bill.start < userdetails.period_end:
-            active_bills.append(bill)
-        elif bill.start < userdetails.period_start:
-            previous_bills.append(bill)
-
+        temp_date = bill.start
+        while temp_date < userdetails.period_end:
+            temp_bill = Bill(temp_date, bill.name, bill.occurence, userdetails.id, bill.amount)
+            if userdetails.period_start <= temp_date < userdetails.period_end:
+                active_bills.append(temp_bill)
+            elif temp_date < userdetails.period_start:
+                previous_bills.append(temp_bill)
+            total_bill_amount += bill.amount
+            temp_date += utility.get_relative(bill.occurence)
+                
     # Get budgets
     budgets = utility.get_budgets(userdetails)
 
@@ -56,7 +64,7 @@ def index(user: User) -> str:
 
     title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
-    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, budgets=budgets, logged_in=True)
+    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, total_bill_amount=total_bill_amount, budgets=budgets, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
