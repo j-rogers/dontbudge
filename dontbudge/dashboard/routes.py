@@ -54,6 +54,12 @@ def index(user: User) -> str:
                 
     # Get budgets
     budgets = utility.get_budgets(userdetails)
+    budget_total = 0
+    used_total = 0
+    for budget, used in budgets:
+        budget_total += budget.amount
+        used_total += used
+    budgets.append((Budget('Total', None, budget_total), used_total))
 
     # Get account information
     accounts = []

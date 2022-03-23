@@ -75,9 +75,10 @@ def get_periods(userdetails):
 def get_budgets(userdetails):
     # Get current period
     periods = get_periods(userdetails)
+    budgets = []
     if not periods:
         for budget in userdetails.budgets:
-            yield budget, 0
+            budgets.append((budget, 0))
     else:
         period = periods[-1]
 
@@ -88,7 +89,9 @@ def get_budgets(userdetails):
                 if period.start <= transaction.date < period.end:
                     used -= transaction.amount
 
-            yield budget, used
+            budgets.append((budget, used))
+    
+    return budgets
 
 def get_account_balance(account):
     balance = 0
