@@ -709,3 +709,18 @@ def delete(user):
         return redirect('/logout')
 
     return render_template('delete.html', title=f'Delete Account {user.username}', form=form, object='your account', logged_in=True)
+
+@dashboard.route('/savings', methods=['GET'])
+@token_required
+def view_savings(user):
+    userdetails = user.userdetails
+
+    bills = []
+    for bill in userdetails.bills:
+        bills.append({'name': bill.name, 'occurence': bill.occurence, 'amount': bill.amount})
+
+    budget_total = 0
+    for budget in userdetails.budgets:
+        budget_total += budget.amount
+    
+    return render_template('savings.html', title='Savings', logged_in=True, bills=bills, budget_total=budget_total)

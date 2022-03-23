@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <h1>Expenses</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Amount</th>
+                <th scope="col">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="rangeMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          Fortnightly
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="rangeMenu">
+                          <a class="dropdown-item" href="#" onclick="weekly()">Weekly</a>
+                          <a class="dropdown-item" href="#" onclick="fortnightly()">Fortnightly</a>
+                          <a class="dropdown-item" href="#" onclick="monthly()">Monthly</a>
+                          <a class="dropdown-item" href="#" onclick="quarterly()">Quarterly</a>
+                          <a class="dropdown-item" href="#" onclick="annually()">Annually</a>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>Bills</th>
+                <th id="billAmount">$0</th>
+                <th/>
+            </tr>
+            <tr>
+                <th>Budgets</th>
+                <th id="budgetAmount">${{ budget_total }}</th>
+                <th/>
+            </tr>
+        </tbody>
+    </table>
+    <h1>Income</h1>
+
+</div>
+
+<script>
+    var bills = {{ bills | tojson }};
+    var budgetTotal = {{ budget_total }};
+
+    function weekly() {
+        document.getElementById("rangeMenu").textContent = "Weekly";
+
+        var total = 0.0;
+        bills.forEach(function (bill){
+            var amount = parseFloat(bill['amount'])
+            console.log(amount);
+            console.log(total);
+            switch(bill['occurence']) {
+                case '1W':
+                    total += amount
+                    break;
+                case '2W':
+                    total += amount / 2;
+                    break;
+                case '1M':
+                    total += amount / 4;
+                    break;
+                case '1Q':
+                    total += amount / 12;
+                    break;
+                case '1Y':
+                    total += amount / 52;
+                    break;
+            }
+        });
+
+        var newBudgetTotal = budgetTotal / 2;
+
+        document.getElementById("billAmount").textContent = "$" + total.toFixed(2);
+        document.getElementById("budgetAmount").textContent = "$" + newBudgetTotal.toFixed(2);
+    }
+
+    function fortnightly() {
+        document.getElementById("rangeMenu").textContent = "Fortnightly";
+
+        var total = 0.0;
+        bills.forEach(function (bill){
+            var amount = parseFloat(bill['amount'])
+            console.log(amount);
+            console.log(total);
+            switch(bill['occurence']) {
+                case '1W':
+                    total += amount * 2;
+                    break;
+                case '2W':
+                    total += amount;
+                    break;
+                case '1M':
+                    total += amount / 2;
+                    break;
+                case '1Q':
+                    total += amount / 6;
+                    break;
+                case '1Y':
+                    total += amount / 26;
+                    break;
+            }
+        });
+
+        document.getElementById("billAmount").textContent = "$" + total.toFixed(2);
+        document.getElementById("budgetAmount").textContent = "$" + budgetTotal.toFixed(2);
+    }
+
+    function monthly() {
+        document.getElementById("rangeMenu").textContent = "Monthly";
+
+        var total = 0.0;
+        bills.forEach(function (bill){
+            var amount = parseFloat(bill['amount'])
+            console.log(amount);
+            console.log(total);
+            switch(bill['occurence']) {
+                case '1W':
+                    total += amount * 4;
+                    break;
+                case '2W':
+                    total += amount * 2;
+                    break;
+                case '1M':
+                    total += amount;
+                    break;
+                case '1Q':
+                    total += amount / 3;
+                    break;
+                case '1Y':
+                    total += amount / 12;
+                    break;
+            }
+        });
+
+        var newBudgetTotal = budgetTotal * 2;
+
+        document.getElementById("billAmount").textContent = "$" + total.toFixed(2);
+        document.getElementById("budgetAmount").textContent = "$" + newBudgetTotal.toFixed(2);
+    }
+
+    function quarterly() {
+        document.getElementById("rangeMenu").textContent = "Quarterly";
+
+        var total = 0.0;
+        bills.forEach(function (bill){
+            var amount = parseFloat(bill['amount'])
+            console.log(amount);
+            console.log(total);
+            switch(bill['occurence']) {
+                case '1W':
+                    total += amount * 12;
+                    break;
+                case '2W':
+                    total += amount * 6;
+                    break;
+                case '1M':
+                    total += amount * 3;
+                    break;
+                case '1Q':
+                    total += amount;
+                    break;
+                case '1Y':
+                    total += amount / 4;
+                    break;
+            }
+        });
+
+        var newBudgetTotal = budgetTotal * 6;
+
+        document.getElementById("billAmount").textContent = "$" + total.toFixed(2);
+        document.getElementById("budgetAmount").textContent = "$" + newBudgetTotal.toFixed(2);
+    }
+
+    function annually() {
+        document.getElementById("rangeMenu").textContent = "Annually";
+
+        var total = 0.0;
+        bills.forEach(function (bill){
+            var amount = parseFloat(bill['amount'])
+            console.log(amount);
+            console.log(total);
+            switch(bill['occurence']) {
+                case '1W':
+                    total += amount * 52;
+                    break;
+                case '2W':
+                    total += amount * 26;
+                    break;
+                case '1M':
+                    total += amount * 12;
+                    break;
+                case '1Q':
+                    total += amount * 4;
+                    break;
+                case '1Y':
+                    total += amount;
+                    break;
+            }
+        });
+
+        var newBudgetTotal = budgetTotal * 26;
+
+        document.getElementById("billAmount").textContent = "$" + total.toFixed(2);
+        document.getElementById("budgetAmount").textContent = "$" + newBudgetTotal.toFixed(2);
+    }
+
+    window.onload = (event) => fortnightly();
+</script>
+
+{% endblock %}
