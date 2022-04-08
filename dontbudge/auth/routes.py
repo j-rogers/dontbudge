@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, flash, redirect
+from flask import Blueprint, request, render_template, flash, redirect, session
 from datetime import date
 import hashlib
 from flask.helpers import make_response
@@ -54,9 +54,12 @@ def login():
 
             user = User.query.filter_by(username=username).first()
             if password_hash.hexdigest() == user.password:
-                token = create_token(user)
+                expires = None
+                if form.remember:
+                    expires = date.today() + relativedelta(months=1)
+                token = create_token(user, form.remember)
                 response = make_response(redirect('/'))
-                response.set_cookie('token', token)
+                response.set_cookie('token', token, expires=expires)
                 return response
             else:
                 flash('Incorrect username or password.')

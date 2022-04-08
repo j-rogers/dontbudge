@@ -13,6 +13,10 @@
             {{ form.password(class_="form-control", placeholder_="password") }}
             {{ form.password.label(class_="form-label") }}
         </div>
+        <div class="mb-3">
+            {{ form.remember(value='n') }}
+            {{ form.remember.label(class_="form-label") }}
+        </div>
         <div class="text-center mb-3">
             {{ form.submit(class_="btn btn-primary text-center") }}
         </div>
