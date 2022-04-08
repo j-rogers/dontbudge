@@ -1,5 +1,6 @@
 from flask import request, redirect
 from functools import wraps
+import datetime
 import jwt
 import dontbudge
 from dontbudge.auth.models import User
@@ -27,6 +28,7 @@ def token_required(f):
         return f(user, *args, **kwargs)
     return decorator
 
-def create_token(user):
-    token = jwt.encode({'id': user.id, 'username': user.username}, dontbudge.SECRET)
+def create_token(user, remember):
+    exp = 9999999999 if remember else datetime.now()
+    token = jwt.encode({'id': user.id, 'username': user.username, 'exp': exp}, dontbudge.SECRET)
     return token

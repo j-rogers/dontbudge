@@ -54,7 +54,7 @@ def login():
 
             user = User.query.filter_by(username=username).first()
             if password_hash.hexdigest() == user.password:
-                token = create_token(user)
+                token = create_token(user, form.remember)
                 response = make_response(redirect('/'))
                 response.set_cookie('token', token)
                 return response
