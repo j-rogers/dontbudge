@@ -65,7 +65,7 @@ def index(user: User) -> str:
     budgets.append((Budget('Total', None, budget_total), used_total))
 
     # Get category information for chart
-    category_chart = {}
+    category_chart = {'None': 0}
     for category in userdetails.categories:
         category_chart[category.name] = 0 
 
@@ -79,11 +79,11 @@ def index(user: User) -> str:
         # Category spending
         period = utility.get_periods(userdetails)[-1]
         for transaction in utility.get_account_transactions(account):
-            if period.start <= transaction.date < period.end:
+            if period.start <= transaction.date < period.end and transaction.amount < 0:
                 if transaction.category:
-                    category_chart[transaction.category.name] += transaction.amount
-
-    print(category_chart)
+                    category_chart[transaction.category.name] += transaction.amount * -1
+                else:
+                    category_chart['None'] += transaction.amount * -1
 
     title = f'{userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 

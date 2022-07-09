@@ -17,13 +17,13 @@
                 <tbody>
                     {% for budget, used in budgets %}
                     <tr>
-                        <th>{{ budget.name }}</th>
+                        <td>{{ budget.name }}</th>
                         {% if used < budget.amount %}
-                        <th class="text-success text-end">{{ used }}</th>
+                        <td class="text-success text-end">${{ used }}</th>
                         {% else %}
-                        <th class="text-danger text-end">{{ used }}</th>
+                        <td class="text-danger text-end">${{ used }}</th>
                         {% endif %}
-                        <th class="text-end">{{ budget.amount }}</th>
+                        <td class="text-end">${{ budget.amount }}</th>
                     </tr>
                     {% endfor %}
                 </tbody>
