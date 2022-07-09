@@ -257,7 +257,7 @@ def edit_transaction(user: User, transaction_index: int) -> str:
             transaction.date = transaction_form.date.data
         
         # Bill
-        if transaction.bill_id != transaction_form.bill.data:
+        if transaction.bill_id != int(transaction_form.bill.data):
             transaction.bill_id = transaction_form.bill.data
             bill = Bill.query.filter_by(id=transaction_form.bill.data).first()
             if bill:
