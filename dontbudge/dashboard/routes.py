@@ -68,7 +68,7 @@ def index(user: User) -> str:
         balance = utility.get_account_balance(account)
         accounts.append((account, balance, reversed(transactions)))
 
-    title = f'Current Period: {userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
+    title = f'{userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
     return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, total_bill_amount=total_bill_amount, budgets=budgets, logged_in=True)
 
@@ -148,8 +148,9 @@ def view_account(user: User, account_index: int) -> str:
         return redirect('/')
 
     transactions = utility.get_account_transactions(account)
+    balance = utility.get_account_balance(account)
 
-    return render_template('account.html', title=f'Transactions for {account.name}', account=account, transactions=reversed(transactions), logged_in=True)
+    return render_template('account.html', title=f'Transactions for {account.name}', account=account, balance=balance, transactions=reversed(transactions), logged_in=True)
 
 @dashboard.route('/account/edit/<account_index>', methods=['GET', 'POST'])
 @token_required
@@ -426,7 +427,7 @@ def view_period(user: User, period_index: int) -> str:
         if period.start <= transaction.date < period.end:
             period_transactions.append(transaction)
 
-    title = f'Current Period: {period.start.strftime("%d %B, %Y")} - {period.end.strftime("%d %B, %Y")}'
+    title = f'{period.start.strftime("%d %B, %Y")} - {period.end.strftime("%d %B, %Y")}'
     menu_items = [
         utility.Menu('Select Period', reversed([
             utility.MenuItem(f'{p.start.strftime("%d %B, %Y")} - {p.end.strftime("%d %B, %Y")}', f'/period/view/{periods.index(p)}') for p in periods

@@ -12,15 +12,23 @@
         <tbody>
             {% for account, balance in accounts %}
             <tr>
-                <th><a href="/account/view/{{ account.user.accounts.index(account) }}">{{ account.name }}</a></th>
+                <th>{{ account.name }}</th>
                 {% if balance >= 0 %}
                 <th class="text-success">{{ balance }}</th>
                 {% else %}
                 <th class="text-danger">{{ balance }}</th>
                 {% endif %}
                 <th>
-                    <a class="btn btn-primary" role="button" href="/account/edit/{{ account.user.accounts.index(account) }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/account/delete/{{ account.user.accounts.index(account) }}">Delete</a>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="actions" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="actions">
+                            <li><a class="dropdown-item" href="/account/edit/{{ account.user.accounts.index(account) }}">Edit</a></li>
+                            <li><a class="dropdown-item" href="/account/delete/{{ account.user.accounts.index(account) }}">Delete</a></li>
+                            <li><a class="dropdown-item" href="/account/view/{{ account.user.accounts.index(account) }}">Transactions</a></li>
+                        </ul>
+                    </div>                   
                 </th>
             </tr>
             {% endfor %}

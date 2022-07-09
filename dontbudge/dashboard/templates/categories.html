@@ -13,8 +13,15 @@
             <tr>
                 <th>{{ category.name }}</th>
                 <th>
-                    <a class="btn btn-primary" role="button" href="/category/edit/{{ category.user.categories.index(category) }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/category/delete/{{ category.user.categories.index(category) }}">Delete</a>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="actions" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="actions">
+                            <li><a class="dropdown-item" href="/category/edit/{{ category.user.categories.index(category) }}">Edit</a></li>
+                            <li><a class="dropdown-item" href="/category/delete/{{ category.user.categories.index(category) }}">Delete</a></li>
+                        </ul>
+                    </div>
                 </th>
             </tr>
             {% endfor %}

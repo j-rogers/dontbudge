@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container">
-    {% if account.balance >= 0 %}
-    <h2 class="text-success">Balance: {{ account.balance }}</h2>
+<div class="container table-responsive-md">
+    {% if balance >= 0 %}
+    <h2 class="text-success">Balance: {{ balance }}</h2>
     {% else %}
-    <h2 class="text-danger">Balance: {{ account.balance }}</h2>
+    <h2 class="text-danger">Balance: {{ balance }}</h2>
     {% endif %}
     <table class="table table-striped">
         <thead>
             <tr>
                 <th scope="col">Amount</th>
                 <th scope="col">Description</th>
-                <th scope="col">Category</th>
+                <th scope="col" class="d-none d-sm-table-cell">Category</th>
                 <th scope="col">Date</th>
             </tr>
         </thead>
@@ -25,11 +25,18 @@
                 <th class="text-danger">{{ transaction.amount }}</th>
                 {% endif %}
                 <th>{{ transaction.description }}</th>
-                <th>{{ transaction.category.name }}</th>
+                <th class="d-none d-sm-table-cell">{{ transaction.category.name }}</th>
                 <th>{{ transaction.date.strftime('%d %B, %Y') }}</th>
                 <th>
-                    <a class="btn btn-primary" role="button" href="/transaction/edit/{{ transaction.user.transactions.index(transaction) }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/transaction/delete/{{ transaction.user.transactions.index(transaction) }}">Delete</a>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="actions" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="actions">
+                            <li><a class="dropdown-item" href="/transaction/edit/{{ transaction.user.transactions.index(transaction) }}">Edit</a></li>
+                            <li><a class="dropdown-item" href="/transaction/delete/{{ transaction.user.transactions.index(transaction) }}">Delete</a></li>
+                        </ul>
+                    </div>
                 </th>
             </tr>
             {% endfor %}

@@ -8,19 +8,26 @@
                 <th scope="col">Name</th>
                 <th scope="col">Amount</th>
                 <th scope="col">Next Expected</th>
-                <th scope="col">Occurence</th>
+                <th scope="col" class="d-none d-sm-table-cell">Occurence</th>
             </tr>
         </thead>
         <tbody>
             {% for bill, occurence in bills %}
             <tr>
                 <th>{{ bill.name }}</th>
-                <th>{{ bill.amount }}</th>
+                <th>${{ bill.amount }}</th>
                 <th>{{ bill.start.strftime('%d %B, %Y') }}</th>
-                <th>{{ occurence }}</th>
+                <th class="d-none d-sm-table-cell">{{ occurence }}</th>
                 <th>
-                    <a class="btn btn-primary" role="button" href="/bill/edit/{{ bill.user.bills.index(bill) }}">Edit</a>
-                    <a class="btn btn-primary" role="button" href="/bill/delete/{{ bill.user.bills.index(bill) }}">Delete</a>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="actions" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="actions">
+                            <li><a class="dropdown-item" href="/bill/edit/{{ bill.user.bills.index(bill) }}">Edit</a></li>
+                            <li><a class="dropdown-item" href="/bill/delete/{{ bill.user.bills.index(bill) }}">Delete</a></li>
+                        </ul>
+                    </div>
                 </th>
             </tr>
             {% endfor %}

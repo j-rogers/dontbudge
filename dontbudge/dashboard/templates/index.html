@@ -3,135 +3,106 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <h1 class="text-center">Budgets</h1>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Used</th>
-                    <th scope="col">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for budget, used in budgets %}
-                <tr>
-                    <th>{{ budget.name }}</th>
-                    {% if used < budget.amount %}
-                    <th class="text-success">{{ used }}</th>
-                    {% else %}
-                    <th class="text-danger">{{ used }}</th>
-                    {% endif %}
-                    <th>{{ budget.amount }}</th>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="col">
+            <h1 class="text-center">Budgets</h1>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col" class="text-end">Used</th>
+                        <th scope="col" class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for budget, used in budgets %}
+                    <tr>
+                        <th>{{ budget.name }}</th>
+                        {% if used < budget.amount %}
+                        <th class="text-success text-end">{{ used }}</th>
+                        {% else %}
+                        <th class="text-danger text-end">{{ used }}</th>
+                        {% endif %}
+                        <th class="text-end">{{ budget.amount }}</th>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="row">
-        <div class="col">
+        <div class="col-md">
             <h1 class="text-center">Accounts</h1>
             {% for account, balance, transactions in accounts %}
-                <div class="container py-3">
-                    <div class="row border bg-light">
-                        <div class="col">
-                            <h4 class="text-primary">{{ account.name }}</h4>
-                        </div>
-                        <div class="col text-end">
-                            {% if balance >= 0 %}
-                            <h4 class="text-success">${{ balance }}</h4>
-                            {% else %}
-                            <h4 class="text-danger">${{ balance }}</h4>
-                            {% endif %}
-                        </div>
-                    </div>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ account.name }}</th>
+                        {% if balance >= 0 %}
+                            <th class="col text-success text-end">${{ balance }}</h4>
+                        {% else %}
+                            <th class="col text-danger text-end">${{ balance }}</h4>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
                     {% for transaction in transactions %}
-                    <div class="row border">
-                        <div class="col">
-                            <p>{{ transaction.description }}</p>
-                        </div>
-                        <div class="col text-end">
-                            {% if transaction.amount > 0 %}
-                            <p class="text-success">${{ transaction.amount }}</p>
-                            {% else %}
-                            <p class="text-danger">-${{ transaction.amount * -1 }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                    <tr>
+                        <td>{{ transaction.description }}</td>
+                        {% if transaction.amount > 0 %}
+                            <td class="text-end text-success">${{ transaction.amount }}</p>
+                        {% else %}
+                            <td class="text-end text-danger">-${{ transaction.amount * -1 }}</p>
+                        {% endif %}
+                    </tr>
                     {% endfor %}
-                </div>
+                </tbody>
+            </table>
             {% endfor %}
         </div>
-        <div class="col">
+        <div class="col-md">
             <h1 class="text-center">Bills due this Period</h1>
-            <div class="container py-2">
-                <div class="row border bg-light">
-                    <div class="col">
-                        <h4>Bill</h4>
-                    </div>
-                    <div class="col">
-                        <h4>Amount</h4>
-                    </div>
-                    <div class="col">
-                        <h4>Due</h4>
-                    </div>
-                </div>
-                {% for bill in bills %}
-                <div class="row border">
-                    <div class="col">
-                        {% if bill in bills[:bills.index(bill)] %}
-                        <p>{{ bill.name }} x2</p>
-                        {% else %}
-                        <p>{{ bill.name }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="col">
-                        <p>${{ bill.amount }}</p>
-                    </div>
-                    <div class="col">
-                        <p>{{ bill.start.strftime('%d %B, %Y') }}</p>
-                    </div>
-                </div>
-                {% endfor %}
-                <div class="row border">
-                    <div class="col"></div>
-                    <div class="col">
-                        <p>Total</p>
-                    </div>
-                    <div class="col">
-                        ${{ total_bill_amount }}
-                    </div>
-                </div>
-            </div>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Bill</th>
+                        <th scope="col" class="text-end">Amount</th>
+                        <th scope="col" class="text-end">Due</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.name }}</td>
+                            <td class="text-end" >${{ bill.amount }}</td>
+                            <td class="text-end">{{ bill.start.strftime('%d %B, %Y') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
     {% if previous_bills %}
     <div class="row">
-        <h1 class="text-center">Previous Bills (Possibly Overdue)</h1>
-        <div class="container py-2"></div>
-            <div class="row border bg-light">
-                <div class="col">
-                    <h4>Bill</h4>
-                </div>
-                <div class="col">
-                    <h4>Amount</h4>
-                </div>
-                <div class="col">
-                    <h4>Due</h4>
-                </div>
-            </div>
-            {% for bill in previous_bills %}
-            <div class="row border">
-                <div class="col">
-                    <p>{{ bill.name }}</p>
-                </div>
-                <div class="col">
-                    <p>${{ bill.amount }}</p>
-                </div>
-                <div class="col">
-                    <p>{{ bill.start.strftime('%d %B, %Y') }}</p>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="col">
+            <h1 class="text-center">Bills from Previous Period</h1>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Bill</th>
+                        <th scope="col" class="text-end">Amount</th>
+                        <th scope="col" class="text-end">Due</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in previous_bills %}
+                    <tr>
+                        <td>{{ bill.name }}</td>
+                        <td class="text-end" >${{ bill.amount }}</td>
+                        <td class="text-end">{{ bill.start.strftime('%d %B, %Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
     {% endif %}
