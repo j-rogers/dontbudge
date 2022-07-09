@@ -3,8 +3,9 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col">
-            <h1 class="text-center">Budgets</h1>
+        <h1 class="text-center">Budgets</h1>
+        <div class="col-md">
+            
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -27,6 +28,9 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="col-md">
+            <canvas id="budgetChart"></canvas>
         </div>
     </div>
     <div class="row">
@@ -106,5 +110,94 @@
         </div>
     </div>
     {% endif %}
+    <div class="row">
+        <div class="col-md">
+            <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="col-md">
+            <canvas id="placeholder"></canvas>
+        </div>
+        <div class="col-md">
+            <canvas id="placeholder"></canvas>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.8.0/dist/chart.min.js"></script>
+<script>
+    var dynamicColors = function() {
+        var r = Math.floor(Math.random() * 255);
+        var g = Math.floor(Math.random() * 255);
+        var b = Math.floor(Math.random() * 255);
+        return "rgb(" + r + "," + g + "," + b + ")";
+    };
+
+    var rawBudgetData = {{ budget_chart | tojson }};
+    var budgetLabels = [];
+    var budgetData = [];
+    var budgetColours = [];
+    rawBudgetData.forEach(function (budget){
+        budgetLabels.push(budget['name']);
+        budgetData.push(budget['percent'])
+        budgetColours.push(dynamicColors())
+    });
+    const budgetCtx = document.getElementById('budgetChart').getContext('2d');
+    const budgetChart = new Chart(budgetCtx, {
+        type: 'bar',
+        options: {
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    min: 0,
+                    max: 100          
+                },
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: '% Used Budgets'
+                }
+            }
+        },
+        data: {
+            labels: budgetLabels,
+            datasets: [{
+                data: budgetData,
+                backgroundColor: budgetColours
+            }]
+        }
+    });
+
+    var rawCategoryData = {{ category_chart | tojson }};
+    var categoryLabels = [];
+    var categoryData = [];
+    var categoryColours = [];
+    for (var key in rawCategoryData) {
+        categoryLabels.push(key);
+        categoryData.push(rawCategoryData[key]);
+        categoryColours.push(dynamicColors());
+    }
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Category Spending'
+                }
+            }
+        },
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryData,
+                backgroundColor: categoryColours
+            }]
+        }
+    })
+</script>
 {% endblock %}

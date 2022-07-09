@@ -5,6 +5,7 @@ Contains the routes for the dashboard.
 Author: Josh Rogers (2022)
 """
 from datetime import datetime, date
+from multiprocessing.sharedctypes import Value
 from flask import request, redirect, render_template, flash
 from werkzeug.wrappers.response import Response
 from dontbudge.database import db
@@ -56,21 +57,37 @@ def index(user: User) -> str:
     budgets = utility.get_budgets(userdetails)
     budget_total = 0
     used_total = 0
+    budget_chart = []
     for budget, used in budgets:
         budget_total += budget.amount
         used_total += used
+        budget_chart.append({'name': budget.name, 'percent': (used / budget.amount) * 100})
     budgets.append((Budget('Total', None, budget_total), used_total))
 
-    # Get account information
+    # Get category information for chart
+    category_chart = {}
+    for category in userdetails.categories:
+        category_chart[category.name] = 0 
+
+    # Get account information and category spending for chart
     accounts = []
     for account in userdetails.accounts:
         transactions = utility.get_account_transactions(account)[-5:]
         balance = utility.get_account_balance(account)
         accounts.append((account, balance, reversed(transactions)))
 
+        # Category spending
+        period = utility.get_periods(userdetails)[-1]
+        for transaction in utility.get_account_transactions(account):
+            if period.start <= transaction.date < period.end:
+                if transaction.category:
+                    category_chart[transaction.category.name] += transaction.amount
+
+    print(category_chart)
+
     title = f'{userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
-    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, total_bill_amount=total_bill_amount, budgets=budgets, logged_in=True)
+    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, total_bill_amount=total_bill_amount, budgets=budgets, budget_chart=budget_chart, category_chart=category_chart, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
@@ -258,11 +275,14 @@ def edit_transaction(user: User, transaction_index: int) -> str:
             transaction.date = transaction_form.date.data
         
         # Bill
-        if transaction.bill_id != int(transaction_form.bill.data):
-            transaction.bill_id = transaction_form.bill.data
-            bill = Bill.query.filter_by(id=transaction_form.bill.data).first()
-            if bill:
-                bill.start = bill.start + utility.get_relative(bill.occurence)
+        try:
+            if transaction.bill_id != int(transaction_form.bill.data):
+                transaction.bill_id = transaction_form.bill.data
+                bill = Bill.query.filter_by(id=transaction_form.bill.data).first()
+                if bill:
+                    bill.start = bill.start + utility.get_relative(bill.occurence)
+        except ValueError:
+            pass
 
         # Commit the changes
         db.session.commit()
