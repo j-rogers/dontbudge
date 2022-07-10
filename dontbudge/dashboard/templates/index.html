@@ -115,7 +115,7 @@
             <canvas id="categoryChart"></canvas>
         </div>
         <div class="col-md">
-            <canvas id="placeholder"></canvas>
+            <canvas id="overviewChart"></canvas>
         </div>
         <div class="col-md">
             <canvas id="placeholder"></canvas>
@@ -196,6 +196,35 @@
             datasets: [{
                 data: categoryData,
                 backgroundColor: categoryColours
+            }]
+        }
+    })
+
+    var rawOverviewData = {{ overview_chart | tojson }};
+    var overviewLabels = [];
+    var overviewData = [];
+    var overviewColours = [];
+    for (var key in rawOverviewData) {
+        overviewLabels.push(key);
+        overviewData.push(rawOverviewData[key]);
+        overviewColours.push(dynamicColors());
+    }
+    const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+    const overviewChart = new Chart(overviewCtx, {
+        type: 'doughnut',
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Period Overview'
+                }
+            }
+        },
+        data: {
+            labels: overviewLabels,
+            datasets: [{
+                data: overviewData,
+                backgroundColor: overviewColours
             }]
         }
     })

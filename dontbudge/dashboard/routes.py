@@ -62,14 +62,18 @@ def index(user: User) -> str:
         budget_total += budget.amount
         used_total += used
         budget_chart.append({'name': budget.name, 'percent': (used / budget.amount) * 100})
-    budgets.append((Budget('Total', None, budget_total), used_total))    
+    budgets.append((Budget('Total', None, budget_total), used_total))
+
+    
 
     # Get account information and category spending for chart
     accounts = []
     category_chart = {}
+    total_balance = 0
     for account in userdetails.accounts:
         transactions = utility.get_account_transactions(account)[-5:]
         balance = utility.get_account_balance(account)
+        total_balance += balance
         accounts.append((account, balance, reversed(transactions)))
 
         # Category spending
@@ -87,9 +91,12 @@ def index(user: User) -> str:
                     else:
                         category_chart['None'] += transaction.amount * -1
 
+    # Period overview chart
+    overview_chart = {'Budgets': budget_total - used_total, 'Bills': total_bill_amount, 'Remaining': total_balance - (budget_total - used_total) - total_bill_amount}
+
     title = f'{userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
-    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, total_bill_amount=total_bill_amount, budgets=budgets, budget_chart=budget_chart, category_chart=category_chart, logged_in=True)
+    return render_template('index.html', title=title, accounts=accounts, bills=active_bills, previous_bills=previous_bills, total_bill_amount=total_bill_amount, budgets=budgets, budget_chart=budget_chart, category_chart=category_chart, overview_chart=overview_chart, logged_in=True)
 
 @dashboard.route('/account/create', methods=['GET', 'POST'])
 @token_required
