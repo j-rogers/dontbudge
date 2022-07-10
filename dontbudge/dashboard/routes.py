@@ -62,15 +62,11 @@ def index(user: User) -> str:
         budget_total += budget.amount
         used_total += used
         budget_chart.append({'name': budget.name, 'percent': (used / budget.amount) * 100})
-    budgets.append((Budget('Total', None, budget_total), used_total))
-
-    # Get category information for chart
-    category_chart = {'None': 0}
-    for category in userdetails.categories:
-        category_chart[category.name] = 0 
+    budgets.append((Budget('Total', None, budget_total), used_total))    
 
     # Get account information and category spending for chart
     accounts = []
+    category_chart = {}
     for account in userdetails.accounts:
         transactions = utility.get_account_transactions(account)[-5:]
         balance = utility.get_account_balance(account)
@@ -81,9 +77,15 @@ def index(user: User) -> str:
         for transaction in utility.get_account_transactions(account):
             if period.start <= transaction.date < period.end and transaction.amount < 0:
                 if transaction.category:
-                    category_chart[transaction.category.name] += transaction.amount * -1
+                    if transaction.category.name not in category_chart:
+                        category_chart[transaction.category.name] = transaction.amount * -1
+                    else:
+                        category_chart[transaction.category.name] += transaction.amount * -1
                 else:
-                    category_chart['None'] += transaction.amount * -1
+                    if 'None' not in category_chart:
+                        category_chart['None'] = transaction.amount * -1
+                    else:
+                        category_chart['None'] += transaction.amount * -1
 
     title = f'{userdetails.period_start.strftime("%d %B, %Y")} - {userdetails.period_end.strftime("%d %B, %Y")}'
 
