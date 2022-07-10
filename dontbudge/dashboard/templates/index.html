@@ -81,6 +81,11 @@
                             <td class="text-end">{{ bill.start.strftime('%d %B, %Y') }}</td>
                         </tr>
                     {% endfor %}
+                    <tr>
+                        <td>Total</td>
+                        <td class="text-end">${{ total_bill_amount }}</td>
+                        <td></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
