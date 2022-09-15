@@ -52,6 +52,9 @@ def index(user: User) -> str:
                 previous_bills.append(temp_bill)
             total_bill_amount += bill.amount
             temp_date += utility.get_relative(bill.occurence)
+
+    # Sort bills by date
+    active_bills = sorted(active_bills, key=lambda b: datetime.strftime(b.start, '%Y/%m/%d'))
                 
     # Get budgets
     budgets = utility.get_budgets(userdetails)
